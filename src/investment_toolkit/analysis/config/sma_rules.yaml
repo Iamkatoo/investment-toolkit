@@ -1,0 +1,10 @@
+sma_rules:
+  High:
+    short: 5
+    long: 25
+  Low:
+    short: 5
+    long: 25
+  Mid:
+    short: 5
+    long: 25
