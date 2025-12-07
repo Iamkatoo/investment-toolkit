@@ -20,7 +20,7 @@ Features:
 - Comprehensive improvement tracking and reporting
 
 Usage:
-    from investment_analysis.analysis.continuous_improvement_engine import ContinuousImprovementEngine
+    from investment_toolkit.analysis.continuous_improvement_engine import ContinuousImprovementEngine
 
     engine = ContinuousImprovementEngine()
     improvements = engine.analyze_and_recommend()
@@ -49,9 +49,9 @@ project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 try:
-    from investment_analysis.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
-    from investment_analysis.monitoring.ab_anomaly_detector import ABAnomalyDetector
-    from investment_analysis.analysis.ab_comparison_engine import ABComparisonEngine
+    from investment_toolkit.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+    from investment_toolkit.monitoring.ab_anomaly_detector import ABAnomalyDetector
+    from investment_toolkit.analysis.ab_comparison_engine import ABComparisonEngine
 except ImportError as e:
     print(f"❌ Import error: {e}")
 

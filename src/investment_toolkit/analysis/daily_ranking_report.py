@@ -1176,7 +1176,7 @@ def generate_empty_ranking_html() -> str:
 
 if __name__ == "__main__":
     # テスト用
-    from investment_analysis.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+    from investment_toolkit.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
     from sqlalchemy import create_engine
     
     # データベース接続

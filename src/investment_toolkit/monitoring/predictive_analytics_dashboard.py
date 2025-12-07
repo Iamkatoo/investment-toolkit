@@ -20,7 +20,7 @@ Features:
 - Long-term trend analysis and insights
 
 Usage:
-    from investment_analysis.monitoring.predictive_analytics_dashboard import PredictiveAnalyticsDashboard
+    from investment_toolkit.monitoring.predictive_analytics_dashboard import PredictiveAnalyticsDashboard
 
     dashboard = PredictiveAnalyticsDashboard()
     dashboard.generate_predictive_dashboard()
@@ -53,8 +53,8 @@ project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 try:
-    from investment_analysis.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
-    from investment_analysis.monitoring.ab_dashboard import ABMonitoringDashboard
+    from investment_toolkit.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+    from investment_toolkit.monitoring.ab_dashboard import ABMonitoringDashboard
 except ImportError as e:
     print(f"❌ Import error: {e}")
 

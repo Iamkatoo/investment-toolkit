@@ -2,7 +2,7 @@ import pandas as pd
 import logging
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine, text
-from investment_analysis.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+from investment_toolkit.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
 from .fred_api import FREDAPI
 import os
 

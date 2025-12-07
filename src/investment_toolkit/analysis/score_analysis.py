@@ -30,7 +30,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # プロジェクト内のモジュールをインポート
-from investment_analysis.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+from investment_toolkit.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
 
 # ウォッチリスト機能は内部で定義済みのため、インポート不要
 

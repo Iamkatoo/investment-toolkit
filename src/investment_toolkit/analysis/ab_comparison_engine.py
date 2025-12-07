@@ -23,7 +23,7 @@ Key Features:
 - Performance degradation alerts
 
 Usage:
-    from investment_analysis.analysis.ab_comparison_engine import ABComparisonEngine
+    from investment_toolkit.analysis.ab_comparison_engine import ABComparisonEngine
 
     engine = ABComparisonEngine()
     results = engine.analyze_daily_comparison(v1_scores, v2_scores, date)
@@ -53,8 +53,8 @@ import warnings
 project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from investment_analysis.utilities.feature_flags import is_enabled
-from investment_analysis.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+from investment_toolkit.utilities.feature_flags import is_enabled
+from investment_toolkit.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
 from sqlalchemy import create_engine, text
 
 # Setup logging

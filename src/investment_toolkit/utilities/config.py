@@ -10,8 +10,8 @@ from psycopg2.extensions import connection as Connection
 from psycopg2.extras import RealDictCursor
 
 # プロジェクトのルートを相対パスで取得して.envを読み込む
-# __file__ = src/investment_analysis/utilities/config.py
-# parent.parent.parent = src/investment_analysis/ -> src/ -> プロジェクトルート
+# __file__ = src/investment_toolkit/utilities/config.py
+# parent.parent.parent.parent = utilities/ -> investment_toolkit/ -> src/ -> プロジェクトルート
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 env_path = BASE_DIR / ".env"
 load_dotenv(dotenv_path=env_path)

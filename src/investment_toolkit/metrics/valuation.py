@@ -54,7 +54,7 @@ def calc_pbr(prices: pd.DataFrame, financials: pd.DataFrame) -> pd.Series:
         # BPSデータを取得するためのSQLクエリを実行
         # SQLAlchemyのエンジンを作成
         from sqlalchemy import create_engine
-        from investment_analysis.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+        from investment_toolkit.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
         
         engine = create_engine(f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
         

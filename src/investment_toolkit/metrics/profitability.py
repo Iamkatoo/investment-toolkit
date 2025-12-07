@@ -8,7 +8,7 @@
 import pandas as pd
 import numpy as np
 from sqlalchemy import create_engine
-from investment_analysis.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+from investment_toolkit.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
 import logging
 
 logger = logging.getLogger(__name__)

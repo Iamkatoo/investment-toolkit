@@ -20,8 +20,8 @@ import numpy as np
 # 相対インポートをサポートするためにプロジェクトルートをsys.pathに追加
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from investment_analysis.database.db_manager import get_db_connection, DatabaseManager
-from investment_analysis.utilities.logging_setup import setup_logger
+from investment_toolkit.database.db_manager import get_db_connection, DatabaseManager
+from investment_toolkit.utilities.logging_setup import setup_logger
 
 # ログ設定
 logger = setup_logger('calc_market_cap', logging.INFO)

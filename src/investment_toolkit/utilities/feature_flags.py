@@ -541,7 +541,7 @@ class FeatureFlags:
         """
         try:
             # Import here to avoid circular imports
-            from investment_analysis.utilities.notification import NotificationManager
+            from investment_toolkit.utilities.notification import NotificationManager
             
             notification_manager = NotificationManager()
             

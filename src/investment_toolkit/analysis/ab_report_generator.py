@@ -25,7 +25,7 @@ Key Features:
 - Export to multiple formats (HTML, PDF, JSON)
 
 Usage:
-    from investment_analysis.analysis.ab_report_generator import ABReportGenerator
+    from investment_toolkit.analysis.ab_report_generator import ABReportGenerator
     
     generator = ABReportGenerator()
     report = generator.generate_daily_summary(comparison_data, date)
@@ -60,8 +60,8 @@ import tempfile
 project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from investment_analysis.analysis.ab_comparison_engine import ABComparisonResult, SectorAnalysis, OutlierDetection
-from investment_analysis.utilities.feature_flags import is_enabled
+from investment_toolkit.analysis.ab_comparison_engine import ABComparisonResult, SectorAnalysis, OutlierDetection
+from investment_toolkit.utilities.feature_flags import is_enabled
 
 # Optional imports for PDF generation
 try:
@@ -1119,7 +1119,7 @@ class ABReportGenerator:
 
 def main():
     """Example usage of AB Report Generator"""
-    from investment_analysis.analysis.ab_comparison_engine import ABComparisonEngine, ABComparisonResult
+    from investment_toolkit.analysis.ab_comparison_engine import ABComparisonEngine, ABComparisonResult
     
     # Create sample comparison result for testing
     import random

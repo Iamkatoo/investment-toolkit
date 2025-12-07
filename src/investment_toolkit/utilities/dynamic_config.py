@@ -23,7 +23,7 @@ Key Features:
 - Integration with existing notification system
 
 Usage:
-    from investment_analysis.utilities.dynamic_config import DynamicConfigManager
+    from investment_toolkit.utilities.dynamic_config import DynamicConfigManager
 
     config_manager = DynamicConfigManager()
     config_manager.update_flag('GRADUAL_V2_ROLLOUT', True, rollout_percentage=25)
@@ -72,8 +72,8 @@ import sys
 project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from investment_analysis.utilities.feature_flags import FeatureFlags, FeatureFlagError, DependencyValidationError
-from investment_analysis.utilities.notification import NotificationManager
+from investment_toolkit.utilities.feature_flags import FeatureFlags, FeatureFlagError, DependencyValidationError
+from investment_toolkit.utilities.notification import NotificationManager
 
 # Setup logging
 logger = logging.getLogger(__name__)

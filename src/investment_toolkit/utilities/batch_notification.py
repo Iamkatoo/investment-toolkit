@@ -19,7 +19,7 @@ from pathlib import Path
 # プロジェクトルートをパスに追加
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from investment_analysis.utilities.notification import NotificationManager
+from investment_toolkit.utilities.notification import NotificationManager
 
 
 class BatchNotificationManager:

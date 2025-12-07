@@ -28,7 +28,7 @@ import time
 import logging
 
 # プロジェクト内のモジュールをインポート
-from investment_analysis.utilities.config import FMP_API_KEY_PRIMARY, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+from investment_toolkit.utilities.config import FMP_API_KEY_PRIMARY, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
 
 # ログ設定
 logging.basicConfig(

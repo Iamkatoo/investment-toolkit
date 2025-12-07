@@ -1,6 +1,6 @@
 import logging
 from pushover_complete import PushoverAPI
-from investment_analysis.utilities.config import PUSHOVER_TOKEN, PUSHOVER_USER_KEY
+from investment_toolkit.utilities.config import PUSHOVER_TOKEN, PUSHOVER_USER_KEY
 
 logger = logging.getLogger(__name__)
 

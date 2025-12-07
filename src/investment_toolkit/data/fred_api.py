@@ -4,7 +4,7 @@ import logging
 import time
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine, text
-from investment_analysis.utilities.config import (
+from investment_toolkit.utilities.config import (
     FRED_API_KEY,
     DB_USER,
     DB_PASSWORD,

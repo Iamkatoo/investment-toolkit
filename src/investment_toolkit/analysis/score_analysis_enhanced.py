@@ -266,7 +266,7 @@ def get_specific_stock_score(engine: Engine, symbol: str, target_date: str = Non
 
 if __name__ == "__main__":
     # テスト用コード
-    from investment_analysis.database.db_manager import DatabaseManager
+    from investment_toolkit.database.db_manager import DatabaseManager
     
     # データベース接続
     db_manager = DatabaseManager()

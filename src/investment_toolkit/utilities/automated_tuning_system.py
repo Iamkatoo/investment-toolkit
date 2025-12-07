@@ -20,7 +20,7 @@ Features:
 - Comprehensive tuning audit trail
 
 Usage:
-    from investment_analysis.utilities.automated_tuning_system import AutomatedTuningSystem
+    from investment_toolkit.utilities.automated_tuning_system import AutomatedTuningSystem
 
     tuner = AutomatedTuningSystem()
     tuner.analyze_and_tune()
@@ -47,8 +47,8 @@ project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 try:
-    from investment_analysis.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
-    from investment_analysis.monitoring.ab_anomaly_detector import ABAnomalyDetector
+    from investment_toolkit.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+    from investment_toolkit.monitoring.ab_anomaly_detector import ABAnomalyDetector
 except ImportError as e:
     print(f"❌ Import error: {e}")
 

@@ -10,7 +10,7 @@ import pandas as pd
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 
-from investment_analysis.utilities.config import DB_HOST, DB_NAME, DB_PASSWORD, DB_PORT, DB_USER
+from investment_toolkit.utilities.config import DB_HOST, DB_NAME, DB_PASSWORD, DB_PORT, DB_USER
 
 LOGGER = logging.getLogger(__name__)
 

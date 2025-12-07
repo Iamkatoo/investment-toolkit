@@ -23,7 +23,7 @@ from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from investment_analysis.scoring.quality_value_features import QualityValueCalculator, QualityValueCalculationError
+from investment_toolkit.scoring.quality_value_features import QualityValueCalculator, QualityValueCalculationError
 
 
 class TestQualityValueCalculator(unittest.TestCase):

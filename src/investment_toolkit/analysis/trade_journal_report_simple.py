@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from sqlalchemy import create_engine, text, Engine
 from typing import Dict, Any, Tuple
-from investment_analysis.utilities.config import get_connection
+from investment_toolkit.utilities.config import get_connection
 import os
 
 def connect_to_database():

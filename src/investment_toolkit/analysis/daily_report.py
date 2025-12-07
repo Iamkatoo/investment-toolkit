@@ -36,7 +36,7 @@ sys.path.insert(0, str(project_root))
 
 # プロジェクト内のモジュールをインポート（エラーハンドリング付き）
 try:
-    from investment_analysis.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+    from investment_toolkit.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
     print("✅ データベース設定読み込み成功")
 except ImportError as e:
     print(f"❌ データベース設定の読み込み失敗: {e}")
@@ -44,7 +44,7 @@ except ImportError as e:
     sys.exit(1)
 
 try:
-    from investment_analysis.analysis.scoring_functions import (
+    from investment_toolkit.analysis.scoring_functions import (
         evaluate_economic_indicators,          # 短期 (=3M) 既存
         evaluate_economic_indicators_long      # ★ 追加
     )
@@ -55,7 +55,7 @@ except ImportError as e:
     sys.exit(1)
 
 try:
-    from investment_analysis.analysis.visualize_dashboard import (
+    from investment_toolkit.analysis.visualize_dashboard import (
         plot_normalized_indices, plot_normalized_indices_6w, plot_normalized_indices_3m, plot_vix_vs_sp500, 
         plot_gold_dollar_yen, plot_gold_dollar_yen_6w, plot_gold_dollar_yen_3m,
         plot_currency_pairs, plot_currency_pairs_6w, plot_currency_pairs_3m, 
@@ -69,7 +69,7 @@ except ImportError as e:
     sys.exit(1)
 
 try:
-    from investment_analysis.analysis.portfolio_utils import build_portfolio_section, build_alltime_portfolio_section
+    from investment_toolkit.analysis.portfolio_utils import build_portfolio_section, build_alltime_portfolio_section
     print("✅ ポートフォリオモジュール読み込み成功")
 except ImportError as e:
     print(f"❌ ポートフォリオモジュールの読み込み失敗: {e}")
@@ -77,7 +77,7 @@ except ImportError as e:
     sys.exit(1)
 
 try:
-    from investment_analysis.analysis.market_scoring import calculate_combined_score, get_portfolio_symbols
+    from investment_toolkit.analysis.market_scoring import calculate_combined_score, get_portfolio_symbols
     print("✅ マーケットスコアモジュール読み込み成功")
 except ImportError as e:
     print(f"❌ マーケットスコアモジュールの読み込み失敗: {e}")
@@ -85,7 +85,7 @@ except ImportError as e:
     sys.exit(1)
 
 try:
-    from investment_analysis.analysis.score_visualization import (
+    from investment_toolkit.analysis.score_visualization import (
         plot_combined_score, create_score_sparklines, 
         plot_market_score_report, generate_market_score_html
     )
@@ -96,7 +96,7 @@ except ImportError as e:
     sys.exit(1)
 
 try:
-    from investment_analysis.analysis.score_analysis import generate_top_stocks_report, generate_rsi35_below_report
+    from investment_toolkit.analysis.score_analysis import generate_top_stocks_report, generate_rsi35_below_report
     print("✅ スコア分析モジュール読み込み成功")
 except ImportError as e:
     print(f"❌ スコア分析モジュールの読み込み失敗: {e}")
@@ -104,7 +104,7 @@ except ImportError as e:
     sys.exit(1)
 
 try:
-    from investment_analysis.analysis.enhanced_score_analysis import generate_enhanced_top_stocks_report, generate_enhanced_rsi35_report
+    from investment_toolkit.analysis.enhanced_score_analysis import generate_enhanced_top_stocks_report, generate_enhanced_rsi35_report
     print("✅ 拡張スコア分析モジュール読み込み成功")
 except ImportError as e:
     print(f"❌ 拡張スコア分析モジュールの読み込み失敗: {e}")
@@ -112,7 +112,7 @@ except ImportError as e:
     sys.exit(1)
 
 try:
-    from investment_analysis.analysis.watchlist_report import generate_watchlist_report_html, generate_dynamic_watchlist_html, update_watchlist_performance_data, generate_mini_chart_watchlist_html
+    from investment_toolkit.analysis.watchlist_report import generate_watchlist_report_html, generate_dynamic_watchlist_html, update_watchlist_performance_data, generate_mini_chart_watchlist_html
     print("✅ ウォッチリストレポートモジュール読み込み成功")
 except ImportError as e:
     print(f"❌ ウォッチリストレポートモジュールの読み込み失敗: {e}")
@@ -120,7 +120,7 @@ except ImportError as e:
     sys.exit(1)
 
 try:
-    from investment_analysis.analysis.daily_ranking_report import generate_daily_ranking_html
+    from investment_toolkit.analysis.daily_ranking_report import generate_daily_ranking_html
     print("✅ 日次ランキングレポートモジュール読み込み成功")
 except ImportError as e:
     print(f"❌ 日次ランキングレポートモジュールの読み込み失敗: {e}")
@@ -130,7 +130,7 @@ except ImportError as e:
 # trade_journal_report の機能は portfolio_alltime.html と market_score_report.html に統合されました
 
 try:
-    from investment_analysis.scoring.validation import ScoringValidator
+    from investment_toolkit.scoring.validation import ScoringValidator
     print("✅ スコアリング検証モジュール読み込み成功")
 except ImportError as e:
     print(f"❌ スコアリング検証モジュールの読み込み失敗: {e}")
@@ -961,7 +961,7 @@ def generate_reports(engine, df_merged, df_scored, df_scored_long, *, offline: b
     try:
         # SSOT(既存HTML)方式なら DB不要。必要なら asof_date と output_dir だけ渡す。
         print("DEBUG: Importing build_macro_snapshot...")
-        from investment_analysis.analysis.score_visualization import build_macro_snapshot
+        from investment_toolkit.analysis.score_visualization import build_macro_snapshot
         import inspect
         
         print("DEBUG: Import successful")
@@ -1229,7 +1229,7 @@ def generate_reports(engine, df_merged, df_scored, df_scored_long, *, offline: b
         except Exception as e:
             print(f"  ⚠️ ウォッチリストレポート生成エラー: {e}")
             # エラー時は空のレポートを生成
-            from investment_analysis.analysis.watchlist_report import generate_empty_watchlist_html
+            from investment_toolkit.analysis.watchlist_report import generate_empty_watchlist_html
             empty_watchlist_html = generate_empty_watchlist_html()
             (GRAPHS_DIR / "watchlist_report_mini.html").write_text(empty_watchlist_html, encoding="utf-8")
             (ICLOUD_GRAPHS_DIR / "watchlist_report_mini.html").write_text(empty_watchlist_html, encoding="utf-8")
@@ -1252,7 +1252,7 @@ def generate_reports(engine, df_merged, df_scored, df_scored_long, *, offline: b
     except Exception as e:
         print(f"  ⚠️ 日次ランキングレポート生成エラー: {e}")
         # エラー時は空のレポートを生成
-        from investment_analysis.analysis.daily_ranking_report import generate_empty_ranking_html
+        from investment_toolkit.analysis.daily_ranking_report import generate_empty_ranking_html
         empty_ranking_html = generate_empty_ranking_html()
         (GRAPHS_DIR / "daily_ranking_report.html").write_text(empty_ranking_html, encoding="utf-8")
         (ICLOUD_GRAPHS_DIR / "daily_ranking_report.html").write_text(empty_ranking_html, encoding="utf-8")

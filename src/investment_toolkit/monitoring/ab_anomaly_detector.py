@@ -25,7 +25,7 @@ Key Features:
 - Historical baseline establishment
 
 Usage:
-    from investment_analysis.monitoring.ab_anomaly_detector import ABAnomalyDetector
+    from investment_toolkit.monitoring.ab_anomaly_detector import ABAnomalyDetector
     
     detector = ABAnomalyDetector()
     anomalies = detector.check_system_health(ab_result)
@@ -64,9 +64,9 @@ from email.mime.multipart import MIMEMultipart
 project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from investment_analysis.analysis.ab_comparison_engine import ABComparisonResult
-from investment_analysis.utilities.feature_flags import is_enabled
-from investment_analysis.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+from investment_toolkit.analysis.ab_comparison_engine import ABComparisonResult
+from investment_toolkit.utilities.feature_flags import is_enabled
+from investment_toolkit.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
 from sqlalchemy import create_engine, text
 
 # Setup logging
@@ -1105,7 +1105,7 @@ class ABAnomalyDetector:
 def main():
     """Example usage and testing"""
     import asyncio
-    from investment_analysis.analysis.ab_comparison_engine import ABComparisonEngine, ABComparisonResult
+    from investment_toolkit.analysis.ab_comparison_engine import ABComparisonEngine, ABComparisonResult
     
     # Initialize detector
     detector = ABAnomalyDetector()

@@ -18,8 +18,8 @@ import json
 import html
 from sqlalchemy import text
 
-from investment_analysis.analysis.watchlist_manager import WatchlistManager
-from investment_analysis.analysis.score_analysis import get_stock_technical_data
+from investment_toolkit.analysis.watchlist_manager import WatchlistManager
+from investment_toolkit.analysis.score_analysis import get_stock_technical_data
 
 
 def create_watchlist_performance_chart(watchlist_data: pd.DataFrame) -> go.Figure:
@@ -1593,7 +1593,7 @@ def generate_mini_chart_watchlist_html(engine) -> str:
 if __name__ == "__main__":
     """メイン実行部分"""
     try:
-        from investment_analysis.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+        from investment_toolkit.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
         from sqlalchemy import create_engine
         
         print("🚀 ウォッチリストレポート生成開始")

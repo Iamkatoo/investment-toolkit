@@ -41,7 +41,7 @@ sys.path.insert(0, str(project_root))
 
 # テスト対象のモジュールをインポート
 try:
-    from investment_analysis.scoring.validation import (
+    from investment_toolkit.scoring.validation import (
         ScoringValidator, AlertLevel, ValidationAlert,
         DailyValidationResults, MonthlyValidationResults
     )

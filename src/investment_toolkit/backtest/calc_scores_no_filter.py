@@ -36,7 +36,7 @@ from scipy import stats
 # プロジェクトルートをパスに追加
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from investment_analysis.database.db_manager import DatabaseManager
+from investment_toolkit.database.db_manager import DatabaseManager
 
 # ログ設定
 logging.basicConfig(

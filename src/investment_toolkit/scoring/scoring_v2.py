@@ -27,15 +27,15 @@ project_root = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 # Import V2 scoring modules
-from investment_analysis.scoring.schema_parser import ScoreSchemaParser
-from investment_analysis.scoring.fundamental_features import FundamentalTrendCalculator
-from investment_analysis.scoring.quality_value_features import QualityValueCalculator
-from investment_analysis.scoring.price_momentum_features import PriceMomentumCalculator
-from investment_analysis.scoring.normalization_engine import NormalizationEngine
-from investment_analysis.scoring.pillar_scoring import PillarScoringEngine
-from investment_analysis.scoring.validation import ScoringValidator
-from investment_analysis.utilities.feature_flags import FeatureFlags
-from investment_analysis.scoring.ranking_snapshot import (
+from investment_toolkit.scoring.schema_parser import ScoreSchemaParser
+from investment_toolkit.scoring.fundamental_features import FundamentalTrendCalculator
+from investment_toolkit.scoring.quality_value_features import QualityValueCalculator
+from investment_toolkit.scoring.price_momentum_features import PriceMomentumCalculator
+from investment_toolkit.scoring.normalization_engine import NormalizationEngine
+from investment_toolkit.scoring.pillar_scoring import PillarScoringEngine
+from investment_toolkit.scoring.validation import ScoringValidator
+from investment_toolkit.utilities.feature_flags import FeatureFlags
+from investment_toolkit.scoring.ranking_snapshot import (
     DEFAULT_WEEKLY_METHODS as DEFAULT_RANKING_METHODS,
     SUPPORTED_WEEKLY_METHODS as SUPPORTED_RANKING_METHODS,
     ensure_methods as ensure_ranking_methods,
@@ -44,13 +44,13 @@ from investment_analysis.scoring.ranking_snapshot import (
 
 # Import database utilities (assuming they exist)
 try:
-    from investment_analysis.utilities.database import get_stock_universe, save_scores_to_db
+    from investment_toolkit.utilities.database import get_stock_universe, save_scores_to_db
 except ImportError:
     # Fallback implementations
     def get_stock_universe(target_date: str, limit: Optional[int] = None) -> List[str]:
         """Get stock universe from database for target date"""
         try:
-            from investment_analysis.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+            from investment_toolkit.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
             from sqlalchemy import create_engine, text
             import logging
 
@@ -94,7 +94,7 @@ except ImportError:
     def save_scores_to_db(scores: pd.DataFrame, table_name: str) -> bool:
         """Save scores to database table"""
         try:
-            from investment_analysis.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+            from investment_toolkit.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
             from sqlalchemy import create_engine
             import logging
             import numpy as np

@@ -12,7 +12,7 @@ from typing import List, Dict, Any, Optional, Tuple
 import time
 
 from .client import JQuantsAPIClient
-from investment_analysis.utilities.config import get_connection
+from investment_toolkit.utilities.config import get_connection
 
 logger = logging.getLogger(__name__)
 

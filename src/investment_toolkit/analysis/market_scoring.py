@@ -10,7 +10,7 @@ from sqlalchemy.engine import Engine
 from pathlib import Path
 import json
 
-from investment_analysis.analysis.score_weights import MICRO_SCORE_WEIGHTS, MACRO_SCORE_WEIGHTS
+from investment_toolkit.analysis.score_weights import MICRO_SCORE_WEIGHTS, MACRO_SCORE_WEIGHTS
 
 
 def calc_volume_score(df: pd.DataFrame, params: Optional[Dict] = None) -> pd.Series:

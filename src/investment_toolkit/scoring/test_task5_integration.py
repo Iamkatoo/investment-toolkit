@@ -26,9 +26,9 @@ from typing import Dict, Any
 project_root = Path(__file__).parent.parent.parent
 sys.path.append(str(project_root))
 
-from investment_analysis.scoring.normalization_engine import NormalizationEngine
-from investment_analysis.scoring.pillar_scoring import PillarScoringEngine
-from investment_analysis.scoring.schema_parser import ScoreSchemaParser
+from investment_toolkit.scoring.normalization_engine import NormalizationEngine
+from investment_toolkit.scoring.pillar_scoring import PillarScoringEngine
+from investment_toolkit.scoring.schema_parser import ScoreSchemaParser
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

@@ -2,7 +2,7 @@ import pandas as pd
 from datetime import date, timedelta
 import pytest
 
-from investment_analysis.scoring.ranking_snapshot import (
+from investment_toolkit.scoring.ranking_snapshot import (
     aggregate_weekly_score,
     build_daily_snapshot,
     build_weekly_snapshot,

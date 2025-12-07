@@ -7,7 +7,7 @@ import logging
 import numpy as np
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine, text
-from investment_analysis.utilities.config import (
+from investment_toolkit.utilities.config import (
     FMP_API_KEY_PRIMARY as API_KEY,
     FMP_API_KEY_SECONDARY as API_KEY_SECONDARY,
     DB_USER,

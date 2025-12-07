@@ -24,7 +24,7 @@ Key Features:
 - Interactive charts with historical context
 
 Usage:
-    from investment_analysis.analysis.weekly_ab_analysis import WeeklyABAnalyzer
+    from investment_toolkit.analysis.weekly_ab_analysis import WeeklyABAnalyzer
 
     analyzer = WeeklyABAnalyzer()
     report = analyzer.generate_weekly_report(weeks=4)
@@ -56,9 +56,9 @@ import warnings
 project_root = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from investment_analysis.analysis.ab_comparison_engine import ABComparisonEngine, ABComparisonResult
-from investment_analysis.monitoring.ab_anomaly_detector import ABAnomalyDetector, SystemHealthScore
-from investment_analysis.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+from investment_toolkit.analysis.ab_comparison_engine import ABComparisonEngine, ABComparisonResult
+from investment_toolkit.monitoring.ab_anomaly_detector import ABAnomalyDetector, SystemHealthScore
+from investment_toolkit.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
 from sqlalchemy import create_engine, text
 
 # Setup logging

@@ -46,12 +46,12 @@ sys.path.insert(0, str(project_root))
 
 # プロジェクト内のモジュールをインポート
 try:
-    from investment_analysis.utilities.config import get_connection, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+    from investment_toolkit.utilities.config import get_connection, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
 except ImportError as e:
     print(f"Warning: Could not import database config: {e}")
 
 try:
-    from investment_analysis.scoring.schema_parser import ScoreSchemaParser
+    from investment_toolkit.scoring.schema_parser import ScoreSchemaParser
 except ImportError as e:
     print(f"Warning: Could not import schema parser: {e}")
 

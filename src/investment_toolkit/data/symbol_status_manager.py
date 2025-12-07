@@ -19,7 +19,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 
 # 設定を読み込む
-from investment_analysis.utilities.config import (
+from investment_toolkit.utilities.config import (
     FMP_API_KEY_PRIMARY,
     DB_USER,
     DB_PASSWORD,

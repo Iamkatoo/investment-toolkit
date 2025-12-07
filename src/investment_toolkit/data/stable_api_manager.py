@@ -12,9 +12,9 @@ from typing import List, Dict, Optional, Tuple
 from sqlalchemy import create_engine, text
 import pandas as pd
 
-from investment_analysis.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
-from investment_analysis.data.fmp_api import FMPAPI
-from investment_analysis.utilities.notification import NotificationManager
+from investment_toolkit.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+from investment_toolkit.data.fmp_api import FMPAPI
+from investment_toolkit.utilities.notification import NotificationManager
 
 
 class StableAPIManager:

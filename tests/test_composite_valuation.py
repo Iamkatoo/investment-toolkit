@@ -18,7 +18,7 @@ from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
-from investment_analysis.data.composite_valuation import (
+from investment_toolkit.data.composite_valuation import (
     calc_peg_ratios,
     calc_pegy_ratios,
     calc_garp_flags,

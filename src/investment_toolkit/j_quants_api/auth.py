@@ -13,7 +13,7 @@ from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
 import time
 
-from investment_analysis.utilities.config import JQUANTS_EMAIL, JQUANTS_PASSWORD
+from investment_toolkit.utilities.config import JQUANTS_EMAIL, JQUANTS_PASSWORD
 
 logger = logging.getLogger(__name__)
 

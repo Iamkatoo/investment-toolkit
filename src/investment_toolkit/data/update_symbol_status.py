@@ -30,7 +30,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # symbol_status_managerをインポート
-from investment_analysis.data.symbol_status_manager import update_symbol_status
+from investment_toolkit.data.symbol_status_manager import update_symbol_status
 
 def main():
     parser = argparse.ArgumentParser(description='シンボルステータスの更新を実行')

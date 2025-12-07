@@ -13,7 +13,7 @@ from datetime import datetime, date
 from sqlalchemy import text
 
 # 元のスコア分析モジュールから必要な関数をインポート
-from investment_analysis.analysis.score_analysis import (
+from investment_toolkit.analysis.score_analysis import (
     get_stock_basic_info,
     get_stock_technical_data,
     get_stock_fundamental_data,

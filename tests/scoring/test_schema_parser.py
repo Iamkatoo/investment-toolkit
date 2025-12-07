@@ -19,7 +19,7 @@ import sys
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from investment_analysis.scoring.schema_parser import ScoreSchemaParser, SchemaValidationError
+from investment_toolkit.scoring.schema_parser import ScoreSchemaParser, SchemaValidationError
 
 
 class TestScoreSchemaParser:

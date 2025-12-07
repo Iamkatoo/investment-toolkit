@@ -10,7 +10,7 @@ import plotly.express as px
 from typing import Dict, Tuple, List, Optional
 from pathlib import Path
 import datetime
-from investment_analysis.analysis.score_weights import MACRO_SCORE_WEIGHTS
+from investment_toolkit.analysis.score_weights import MACRO_SCORE_WEIGHTS
 import json
 from sqlalchemy import text, create_engine
 import math
@@ -1617,8 +1617,8 @@ def generate_market_score_html(df_macro: pd.DataFrame, macro_components: Dict, d
     # 銘柄名とフィルタ情報を取得する関数
     def get_stock_info_with_filters(engine, symbols: List[str], target_date: str = None) -> Dict:
         """銘柄名とフィルタ情報、ランキング情報を取得"""
-        from investment_analysis.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
-        from investment_analysis.analysis.score_analysis import get_market_global_ranking
+        from investment_toolkit.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+        from investment_toolkit.analysis.score_analysis import get_market_global_ranking
         
         if not symbols:
             return {}
@@ -2288,7 +2288,7 @@ def generate_market_score_html(df_macro: pd.DataFrame, macro_components: Dict, d
     if engine is not None:
         try:
             print("🏆 V2スコアランキングTop10を生成中...")
-            from investment_analysis.analysis.daily_report import fetch_daily_top10_rankings
+            from investment_toolkit.analysis.daily_report import fetch_daily_top10_rankings
 
             ranking_data = fetch_daily_top10_rankings(engine)
             df_combined = ranking_data['combined']

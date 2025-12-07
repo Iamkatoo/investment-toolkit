@@ -24,8 +24,8 @@ except ImportError:
     print("Flask is not available. API server will run in simulation mode.")
     FLASK_AVAILABLE = False
 
-from investment_analysis.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
-from investment_analysis.analysis.watchlist_manager import WatchlistManager, format_watchlist_metadata
+from investment_toolkit.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+from investment_toolkit.analysis.watchlist_manager import WatchlistManager, format_watchlist_metadata
 from sqlalchemy import create_engine, text
 
 

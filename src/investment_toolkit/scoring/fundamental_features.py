@@ -40,8 +40,8 @@ sys.path.insert(0, str(project_root))
 
 # プロジェクト内のモジュールをインポート
 try:
-    from investment_analysis.database.db_manager import DatabaseManager, get_db_connection
-    from investment_analysis.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+    from investment_toolkit.database.db_manager import DatabaseManager, get_db_connection
+    from investment_toolkit.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
 except ImportError as e:
     print(f"Warning: Could not import project modules: {e}")
 
