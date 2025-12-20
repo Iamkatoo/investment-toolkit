@@ -8,9 +8,14 @@
 
 import sys
 import json
+import os
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Any
+
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
 
 # プロジェクトルートをパスに追加
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -259,55 +264,61 @@ if FLASK_AVAILABLE:
             import sys
             from pathlib import Path
             
-            # スクリプトのパス
-            script_path = project_root / "scripts" / "generate_single_stock_report.py"
-            
+            # スクリプトのパス（環境変数から取得、デフォルトは investment-workspace）
+            workspace_root = os.getenv(
+                'INVESTMENT_WORKSPACE_ROOT',
+                str(Path(project_root).parent / 'investment-workspace')
+            )
+            script_path = Path(workspace_root) / "scripts" / "generate_single_stock_report.py"
+
             if not script_path.exists():
                 return jsonify({
                     'success': False,
                     'error': f'generate_single_stock_report.py が見つかりません: {script_path}'
                 }), 500
-            
+
             # サブプロセスでスクリプトを実行
             cmd = [sys.executable, str(script_path), '--symbol', symbol, '--no-browser']
-            
+
             print(f"📝 実行コマンド: {' '.join(cmd)}")
-            
+
             # タイムアウト付きで実行（60秒）
             result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
                 timeout=60,
-                cwd=str(project_root)
+                cwd=str(workspace_root)
             )
             
             if result.returncode == 0:
                 print(f"✅ {symbol} の詳細レポート生成成功")
-                
+
                 # 生成されたレポートファイルのパスを推定
-                # レポートは reports/individual_stocks/{symbol}_{company_name}/ に保存される
-                reports_dir = project_root / "reports" / "individual_stocks"
-                
+                # レポートは REPORTS_BASE_DIR/individual_stocks/{symbol}_{company_name}/ に保存される
+                from investment_toolkit.utilities.paths import get_or_create_reports_config
+                reports_config = get_or_create_reports_config()
+                reports_base_dir = reports_config.base_dir
+                individual_stocks_dir = reports_config.individual_stocks_dir
+
                 # 最新の銘柄ディレクトリを探す
-                symbol_dirs = [d for d in reports_dir.glob(f"{symbol}_*") if d.is_dir()]
-                
+                symbol_dirs = [d for d in individual_stocks_dir.glob(f"{symbol}_*") if d.is_dir()]
+
                 if symbol_dirs:
                     # 最新のディレクトリを取得
                     latest_dir = max(symbol_dirs, key=lambda x: x.stat().st_mtime)
-                    
+
                     # ディレクトリ内の最新のHTMLファイルを探す
                     html_files = list(latest_dir.glob("*.html"))
                     if html_files:
                         latest_html = max(html_files, key=lambda x: x.stat().st_mtime)
-                        
+
                         # reports ディレクトリからの相対パスを計算
-                        reports_dir = project_root / "reports"
-                        relative_path = latest_html.relative_to(reports_dir)
-                        
+                        relative_path = latest_html.relative_to(reports_base_dir)
+
                         # HTTP URL を生成（APIサーバー経由でファイル配信）
                         report_url = f"http://127.0.0.1:5001/api/reports/{relative_path}"
-                        
+
                         return jsonify({
                             'success': True,
                             'message': f'{symbol} の詳細レポートを生成しました',

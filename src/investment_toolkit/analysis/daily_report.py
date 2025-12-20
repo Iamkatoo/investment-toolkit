@@ -10,7 +10,7 @@
 
 出力:
     REPORTS_BASE_DIR 環境変数で指定されたディレクトリに dashboard.html が保存される
-    デフォルトは ./reports/ ディレクトリ
+    デフォルトは ../investment-reports/ ディレクトリ (investment-toolkit の sibling リポジトリ)
 """
 
 import os
@@ -18,6 +18,8 @@ import sys
 import pandas as pd
 import numpy as npk
 from datetime import datetime, timedelta
+
+
 from pathlib import Path
 from sqlalchemy import create_engine, text
 import webbrowser

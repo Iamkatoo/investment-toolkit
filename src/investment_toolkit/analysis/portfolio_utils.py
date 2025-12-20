@@ -16,6 +16,10 @@ from plotly.subplots import make_subplots
 from sqlalchemy.engine import Engine
 from sqlalchemy import text
 
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+
 # --------------------------------------------------------------------------
 # 設定
 # --------------------------------------------------------------------------

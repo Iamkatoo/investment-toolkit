@@ -180,8 +180,10 @@ def get_reports_config() -> ReportsConfig:
     Returns:
         ReportsConfig instance
     """
-    # Get base directory from environment or use default (relative to current working directory)
-    base_dir_str = os.getenv("REPORTS_BASE_DIR", "./reports")
+    # Get base directory from environment or use default (investment-reports repo)
+    # Default points to investment-reports repository (sibling of investment-toolkit)
+    default_reports_dir = str(Path(__file__).parent.parent.parent.parent.parent / "investment-reports")
+    base_dir_str = os.getenv("REPORTS_BASE_DIR", default_reports_dir)
     base_dir = Path(base_dir_str).expanduser().resolve()
 
     # Check if iCloud sync is enabled (default: false for security)
