@@ -3645,16 +3645,19 @@ def generate_top_stocks_report(engine, target_date: str = None) -> str:
                 }})
                 .catch(error => {{
                     console.error('🚫 API呼び出しエラー:', error);
-                    
+                    console.error('🚫 エラー詳細:', error.stack);
+
                     let errorMessage = '❌ 詳細レポート生成でエラーが発生しました';
                     if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {{
                         errorMessage = '⚠️ APIサーバーに接続できません。サーバーを起動してください: python start_watchlist_api.py';
                     }} else if (error.message.includes('timeout')) {{
                         errorMessage = '⚠️ レポート生成がタイムアウトしました。しばらく待ってから再試行してください';
+                    }} else {{
+                        errorMessage = `❌ 詳細レポート生成でエラーが発生しました: ${{error.message}}`;
                     }}
-                    
+
                     showTemporaryMessage(errorMessage, 'error');
-                    
+
                     // エラー時もボタンを元に戻す
                     button.innerHTML = originalText;
                     button.disabled = false;

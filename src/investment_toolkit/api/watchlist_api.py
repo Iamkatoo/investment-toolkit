@@ -17,8 +17,9 @@ from typing import Dict, List, Any
 from dotenv import load_dotenv
 load_dotenv()
 
-# プロジェクトルートをパスに追加
-project_root = Path(__file__).resolve().parent.parent.parent
+# プロジェクトルート（investment-toolkitのルート）をパスに追加
+# watchlist_api.py -> api -> investment_toolkit -> src -> investment-toolkit
+project_root = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 try:
