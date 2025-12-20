@@ -1890,10 +1890,68 @@ def start_http_server(port: int, directory: Optional[str] = None) -> Optional[su
         return None
 
 
+def ensure_watchlist_api_server() -> Optional[subprocess.Popen]:
+    """
+    ウォッチリストAPIサーバーが動作していることを確認し、必要に応じて起動する
+
+    Returns:
+        subprocess.Popen or None: 起動したプロセス、または既存サーバーがある場合はNone
+    """
+    api_port = 5001
+
+    # 既存のAPIサーバーがあるかチェック
+    try:
+        response = requests.get(f"http://127.0.0.1:{api_port}/api/health", timeout=2)
+        if response.status_code == 200:
+            print(f"✅ ウォッチリストAPIサーバーは既に起動しています (ポート {api_port})")
+            return None
+    except:
+        pass
+
+    # APIサーバーを起動
+    try:
+        print(f"🚀 ウォッチリストAPIサーバーを起動中 (ポート {api_port})...")
+
+        # watchlist_api.pyのパスを取得
+        api_script = Path(__file__).parent.parent / "api" / "watchlist_api.py"
+
+        if not api_script.exists():
+            print(f"⚠️ ウォッチリストAPIスクリプトが見つかりません: {api_script}")
+            print(f"   詳細レポート生成機能は利用できません")
+            return None
+
+        # APIサーバーをバックグラウンドで起動
+        process = subprocess.Popen(
+            [sys.executable, str(api_script), "--port", str(api_port)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+
+        # 起動確認（最大5秒待機）
+        for _ in range(10):
+            time.sleep(0.5)
+            try:
+                response = requests.get(f"http://127.0.0.1:{api_port}/api/health", timeout=1)
+                if response.status_code == 200:
+                    print(f"✅ ウォッチリストAPIサーバー起動成功 (PID: {process.pid})")
+                    return process
+            except:
+                continue
+
+        print(f"⚠️ ウォッチリストAPIサーバーの起動確認に失敗しました")
+        print(f"   詳細レポート生成機能が利用できない可能性があります")
+        return process
+
+    except Exception as e:
+        print(f"⚠️ ウォッチリストAPIサーバー起動エラー: {e}")
+        print(f"   詳細レポート生成機能は利用できません")
+        return None
+
+
 def ensure_http_server(preferred_port: int = 8080) -> tuple[str, Optional[subprocess.Popen]]:
     """
     HTTPサーバーが動作していることを確認し、必要に応じて起動する
-    
+
     Returns:
         tuple: (dashboard_url, server_process or None)
     """
@@ -2201,7 +2259,7 @@ def main():
     # HTTPサーバーの確認・起動とダッシュボードの表示
     try:
         dashboard_file = REPORT_DIR / "dashboard.html"
-        
+
         # サーバー起動をスキップ
         if no_server:
             print("\n🌐 HTTPサーバー起動はスキップされました（--no-server 指定）")
@@ -2209,6 +2267,10 @@ def main():
             if not no_browser:
                 open_dashboard_safely(f"file://{dashboard_file.absolute()}")
             return
+
+        # ウォッチリストAPIサーバーを起動（詳細レポート生成機能用）
+        print("\n🔌 ウォッチリストAPIサーバーを確認中...")
+        api_server_process = ensure_watchlist_api_server()
 
         # ブラウザ起動をスキップ
         if no_browser and not no_server:
@@ -2238,13 +2300,20 @@ def main():
             print(f"📋 HTTPサーバー情報:")
             print(f"   PID: {server_process.pid}")
             print(f"   URL: {dashboard_url}")
+            if api_server_process:
+                print(f"📋 ウォッチリストAPIサーバー情報:")
+                print(f"   PID: {api_server_process.pid}")
+                print(f"   URL: http://127.0.0.1:5001")
             print(f"   停止方法: kill {server_process.pid}")
+            if api_server_process:
+                print(f"             kill {api_server_process.pid} (APIサーバー)")
             print(f"             または Ctrl+C でこのスクリプト終了時に自動停止")
             
             # スクリプト終了時にサーバーも停止するよう設定（keep_serverが指定されていない場合のみ）
             if not keep_server:
                 import atexit
                 def cleanup():
+                    # HTTPサーバーを停止
                     if server_process and server_process.poll() is None:
                         print("\n🛑 HTTPサーバーを停止中...")
                         try:
@@ -2258,7 +2327,22 @@ def main():
                             print("✅ HTTPサーバーを強制停止しました")
                         except Exception as e:
                             print(f"⚠️ サーバー停止中にエラー: {e}")
-                
+
+                    # ウォッチリストAPIサーバーを停止
+                    if api_server_process and api_server_process.poll() is None:
+                        print("🛑 ウォッチリストAPIサーバーを停止中...")
+                        try:
+                            api_server_process.terminate()
+                            api_server_process.wait(timeout=10)
+                            print("✅ ウォッチリストAPIサーバーを停止しました")
+                        except subprocess.TimeoutExpired:
+                            print("⚠️ APIサーバーが応答しないため、強制kill実行")
+                            api_server_process.kill()
+                            api_server_process.wait()
+                            print("✅ ウォッチリストAPIサーバーを強制停止しました")
+                        except Exception as e:
+                            print(f"⚠️ APIサーバー停止中にエラー: {e}")
+
                 atexit.register(cleanup)
             
             # バッチ実行時またはサーバー常駐モード時は待機しない

@@ -259,18 +259,22 @@ if FLASK_AVAILABLE:
                 }), 400
             
             print(f"🚀 詳細レポート生成開始: {symbol}")
-            
+
             # generate_single_stock_report.pyをコマンドライン引数付きで実行
             import subprocess
             import sys
             from pathlib import Path
-            
+
             # スクリプトのパス（環境変数から取得、デフォルトは investment-workspace）
+            print(f"🔍 project_root: {project_root}")
             workspace_root = os.getenv(
                 'INVESTMENT_WORKSPACE_ROOT',
                 str(Path(project_root).parent / 'investment-workspace')
             )
+            print(f"🔍 workspace_root: {workspace_root}")
             script_path = Path(workspace_root) / "scripts" / "generate_single_stock_report.py"
+            print(f"🔍 script_path: {script_path}")
+            print(f"🔍 script_path.exists(): {script_path.exists()}")
 
             if not script_path.exists():
                 return jsonify({
