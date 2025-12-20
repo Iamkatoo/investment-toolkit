@@ -1106,8 +1106,8 @@ def _get_portfolio_symbols_from_json(engine: Engine) -> List[str]:
     if "PORTFOLIO_JSON_PATH" in os.environ:
         portfolio_path = Path(os.environ["PORTFOLIO_JSON_PATH"])
     else:
-        # デフォルト: /Users/HOME/Codes/Investment/config/portfolio.json
-        portfolio_path = Path(__file__).resolve().parents[4] / "config" / "portfolio.json"
+        # デフォルト: ./config/portfolio.json
+        portfolio_path = Path("./config/portfolio.json").resolve()
 
     try:
         if portfolio_path.exists():

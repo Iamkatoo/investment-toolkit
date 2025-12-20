@@ -1,11 +1,11 @@
 import logging, inspect
+import os
 from pathlib import Path
 from logging.handlers import TimedRotatingFileHandler
 
-ACTIVE_DIR = Path(
-    "/Users/HOME/Library/Mobile Documents/com~apple~CloudDocs/InvestmentLogs/active"
-    .replace(" ", r"\ ")            # ← logrotate と同じ表記で一貫
-)
+# 環境変数でログディレクトリを指定可能 (デフォルト: ./logs)
+LOG_DIR_STR = os.getenv("LOG_DIR", "./logs")
+ACTIVE_DIR = Path(LOG_DIR_STR).expanduser().resolve()
 ACTIVE_DIR.mkdir(parents=True, exist_ok=True)
 
 def _handler(name: str) -> logging.Handler:

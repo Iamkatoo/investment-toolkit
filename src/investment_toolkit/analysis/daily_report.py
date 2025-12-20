@@ -9,8 +9,8 @@
     python src/analysis/daily_report.py
 
 出力:
-    /Users/HOME/Codes/Investment/reports/ ディレクトリに dashboard.html が保存される
-    /Users/HOME/Codes/Investment/reports/graphs/ ディレクトリに各種グラフが保存される
+    REPORTS_BASE_DIR 環境変数で指定されたディレクトリに dashboard.html が保存される
+    デフォルトは ./reports/ ディレクトリ
 """
 
 import os

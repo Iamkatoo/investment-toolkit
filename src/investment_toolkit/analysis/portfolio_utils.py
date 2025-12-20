@@ -20,14 +20,12 @@ from sqlalchemy import text
 # 設定
 # --------------------------------------------------------------------------
 # 環境変数でポートフォリオファイルのパスを指定可能
-# 指定がない場合は、親プロジェクトのconfigディレクトリを探す
+# 指定がない場合は、カレントディレクトリからの相対パスを使用
 if "PORTFOLIO_JSON_PATH" in os.environ:
     PORTFOLIO_JSON = Path(os.environ["PORTFOLIO_JSON_PATH"])
 else:
-    # デフォルト: /Users/HOME/Codes/Investment/config/portfolio.json
-    # investment-toolkit/src/investment_toolkit/analysis/ から見て ../../../.. が親ディレクトリ
-    CONFIG_DIR = Path(__file__).resolve().parents[4] / "config"
-    PORTFOLIO_JSON = CONFIG_DIR / "portfolio.json"
+    # デフォルト: ./config/portfolio.json
+    PORTFOLIO_JSON = Path("./config/portfolio.json").resolve()
 
 
 # --------------------------------------------------------------------------

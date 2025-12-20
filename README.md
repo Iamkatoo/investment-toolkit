@@ -48,20 +48,13 @@ investment_toolkit/
 
 ## Configuration
 
-Set the following environment variables:
+Copy `.env.example` to `.env` and configure your environment variables:
 
 ```bash
-# Database
-DATABASE_URL=postgresql://user:password@localhost/investment
-
-# Data providers
-FMP_API_KEY=your_fmp_api_key
-FRED_API_KEY=your_fred_api_key
-
-# Reports output
-REPORTS_BASE_DIR=/path/to/reports
-ENABLE_ICLOUD_SYNC=true
+cp .env.example .env
 ```
+
+See [.env.example](.env.example) for all available configuration options.
 
 ## Usage
 
@@ -79,4 +72,4 @@ daily_report.generate()
 
 ## License
 
-Proprietary - All rights reserved
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

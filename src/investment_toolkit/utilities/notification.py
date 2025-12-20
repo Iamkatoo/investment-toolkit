@@ -172,8 +172,10 @@ class NotificationManager:
             lines (int): 取得する行数
         """
         from pathlib import Path
-        f = Path("/Users/HOME/Library/Mobile Documents/com~apple~CloudDocs/InvestmentLogs/active") \
-            / f"{logger_name}.log"
+        import os
+
+        log_dir = Path(os.getenv("LOG_DIR", "./logs")).expanduser().resolve()
+        f = log_dir / f"{logger_name}.log"
         if f.exists():
             tail = "\n".join(f.read_text().splitlines()[-lines:])
             self.send_notification(f"📄 {logger_name} tail", tail) 

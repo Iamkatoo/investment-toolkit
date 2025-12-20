@@ -173,30 +173,29 @@ def get_reports_config() -> ReportsConfig:
     Get the current reports configuration.
 
     Configuration is determined by environment variables:
-    - REPORTS_BASE_DIR: Base directory for reports (default: /Users/HOME/Codes/Investment/investment-reports)
-    - ENABLE_ICLOUD_SYNC: Whether to enable iCloud sync (default: true)
-    - ICLOUD_REPORTS_DIR: iCloud reports directory (default: ~/Library/Mobile Documents/com~apple~CloudDocs/reports)
+    - REPORTS_BASE_DIR: Base directory for reports (default: ./reports)
+    - ENABLE_ICLOUD_SYNC: Whether to enable iCloud sync (default: false)
+    - ICLOUD_REPORTS_DIR: iCloud reports directory (required if ENABLE_ICLOUD_SYNC=true)
 
     Returns:
         ReportsConfig instance
     """
-    # Get base directory from environment or use default
-    base_dir = Path(os.getenv(
-        "REPORTS_BASE_DIR",
-        "/Users/HOME/Codes/Investment/investment-reports"
-    ))
+    # Get base directory from environment or use default (relative to current working directory)
+    base_dir_str = os.getenv("REPORTS_BASE_DIR", "./reports")
+    base_dir = Path(base_dir_str).expanduser().resolve()
 
-    # Check if iCloud sync is enabled
-    icloud_enabled = os.getenv("ENABLE_ICLOUD_SYNC", "true").lower() in ("true", "1", "yes")
+    # Check if iCloud sync is enabled (default: false for security)
+    icloud_enabled = os.getenv("ENABLE_ICLOUD_SYNC", "false").lower() in ("true", "1", "yes")
 
     # Get iCloud directory
     icloud_base_dir = None
     if icloud_enabled:
-        icloud_path_str = os.getenv(
-            "ICLOUD_REPORTS_DIR",
-            "/Users/HOME/Library/Mobile Documents/com~apple~CloudDocs/reports"
-        )
-        icloud_base_dir = Path(icloud_path_str)
+        icloud_path_str = os.getenv("ICLOUD_REPORTS_DIR")
+        if icloud_path_str:
+            icloud_base_dir = Path(icloud_path_str).expanduser().resolve()
+        else:
+            # iCloud is enabled but no path provided - disable it
+            icloud_enabled = False
 
     return ReportsConfig(
         base_dir=base_dir,
