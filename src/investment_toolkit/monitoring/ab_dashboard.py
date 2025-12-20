@@ -568,8 +568,13 @@ class ABMonitoringDashboard:
             'last_updated': self.current_metrics.timestamp.strftime('%Y-%m-%d %H:%M:%S')
         }
     
-    def generate_dashboard_html(self, output_path: str = "reports/ab_monitoring_dashboard.html") -> str:
+    def generate_dashboard_html(self, output_path: Optional[str] = None) -> str:
         """Generate complete HTML dashboard"""
+        from investment_toolkit.utilities.paths import get_or_create_reports_config
+
+        if output_path is None:
+            _reports_config = get_or_create_reports_config()
+            output_path = str(_reports_config.graphs_dir / "ab_monitoring_dashboard.html")
         # Load current data
         self.current_metrics = self.load_current_metrics()
         self.historical_data = self.load_historical_data(
@@ -960,9 +965,13 @@ class ABMonitoringDashboard:
 def main():
     """Example usage and testing"""
     import argparse
-    
+    from investment_toolkit.utilities.paths import get_or_create_reports_config
+
+    _reports_config = get_or_create_reports_config()
+    default_output = str(_reports_config.graphs_dir / "ab_monitoring_dashboard.html")
+
     parser = argparse.ArgumentParser(description='AB Monitoring Dashboard')
-    parser.add_argument('--output', '-o', default='reports/ab_monitoring_dashboard.html',
+    parser.add_argument('--output', '-o', default=default_output,
                        help='Output HTML file path')
     parser.add_argument('--monitor', '-m', action='store_true',
                        help='Start real-time monitoring')

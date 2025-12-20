@@ -593,11 +593,16 @@ def main():
         default="5,25;5,30;5,35;5,40;5,50;5,60;7,21;7,28;7,35;7,40;7,50;7,60;10,20;10,25;10,30;10,35;10,40;10,50;10,60;10,70;14,28;14,35;14,40;14,50;14,60;14,70;20,25;20,30;20,35;20,40;20,50;20,60;20,70;20,80;25,50;25,60;25,70;25,80;30,60;30,70;30,80",
         help="SMA parameter pairs as 'short,long;short,long'"
     )
+    from investment_toolkit.utilities.paths import get_or_create_reports_config
+
+    _reports_config = get_or_create_reports_config()
+    default_output = str(_reports_config.graphs_dir / "sma_heatmap.html")
+
     parser.add_argument("--cost", type=float, default=0.002, help="Trading cost (default: 0.002)")
     parser.add_argument("--save", action="store_true", help="Save results to database")
     parser.add_argument("--heatmap", action="store_true", help="Generate heatmap")
     parser.add_argument(
-        "--output", default="reports/sma_heatmap.html", help="Output file for heatmap"
+        "--output", default=default_output, help="Output file for heatmap"
     )
     parser.add_argument(
         "--no-open", action="store_true", help="Do not open the heatmap in browser"

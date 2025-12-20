@@ -9,6 +9,7 @@ from typing import Dict, Tuple, List, Optional, Union
 from sqlalchemy.engine import Engine
 from pathlib import Path
 import json
+import os
 
 from investment_toolkit.analysis.score_weights import MICRO_SCORE_WEIGHTS, MACRO_SCORE_WEIGHTS
 
@@ -1101,8 +1102,13 @@ def _get_portfolio_symbols_from_json(engine: Engine) -> List[str]:
     """
     JSONファイルからポートフォリオ銘柄を取得（フォールバック用）
     """
-    portfolio_path = Path(__file__).resolve().parent.parent.parent / "config" / "portfolio.json"
-    
+    # 環境変数でポートフォリオファイルのパスを指定可能
+    if "PORTFOLIO_JSON_PATH" in os.environ:
+        portfolio_path = Path(os.environ["PORTFOLIO_JSON_PATH"])
+    else:
+        # デフォルト: /Users/HOME/Codes/Investment/config/portfolio.json
+        portfolio_path = Path(__file__).resolve().parents[4] / "config" / "portfolio.json"
+
     try:
         if portfolio_path.exists():
             print(f"フォールバック: ポートフォリオファイルを読み込みます: {portfolio_path}")

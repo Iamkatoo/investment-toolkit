@@ -1033,11 +1033,17 @@ class ScoringV2Engine:
             self.logger.error(f"Score saving failed: {str(e)}")
             return False
     
-    def generate_reports(self, scores: pd.DataFrame, output_dir: str = "reports/v2"):
+    def generate_reports(self, scores: pd.DataFrame, output_dir: Optional[str] = None):
         """Generate comprehensive reports"""
         try:
+            from investment_toolkit.utilities.paths import get_or_create_reports_config
+
+            if output_dir is None:
+                _reports_config = get_or_create_reports_config()
+                output_dir = str(_reports_config.base_dir / "v2")
+
             self.logger.info(f"Generating reports in: {output_dir}")
-            
+
             # Ensure output directory exists
             Path(output_dir).mkdir(parents=True, exist_ok=True)
             
@@ -1116,7 +1122,7 @@ Examples:
     parser.add_argument("--feature-flags", required=True, help="Feature flags config file path")
     parser.add_argument("--symbols", help="Comma-separated symbols (optional)")
     parser.add_argument("--output-table", default="scores_v2", help="Output database table name")
-    parser.add_argument("--output-dir", default="reports/v2", help="Output directory for reports")
+    parser.add_argument("--output-dir", help="Output directory for reports (default: uses paths.py config)")
     parser.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"], help="Logging level")
     parser.add_argument("--save-to-db", action="store_true", help="Save results to database")
     parser.add_argument("--generate-reports", action="store_true", help="Generate comprehensive reports")

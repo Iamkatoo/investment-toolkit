@@ -351,7 +351,10 @@ if FLASK_AVAILABLE:
         """生成されたレポートファイルを配信"""
         try:
             from flask import send_from_directory
-            reports_dir = project_root / "reports"
+            from investment_toolkit.utilities.paths import get_or_create_reports_config
+
+            _reports_config = get_or_create_reports_config()
+            reports_dir = _reports_config.base_dir
             
             # セキュリティチェック: パストラバーサル攻撃を防ぐ
             safe_path = reports_dir / filename

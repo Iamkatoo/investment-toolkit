@@ -20,9 +20,9 @@ from investment_toolkit.utilities.notification import NotificationManager
 class StableAPIManager:
     """
     FMP Stable API による月次データ更新を管理するクラス
-    - actively-trading-list の取得・保存
+    - actively-trading-list の取得・symbol_statusへの保存
     - 銘柄ごとの company profile 取得・保存
-    - symbol_status の更新（exchange判定）
+    - symbol_status の更新（exchange判定・is_active管理）
     - 従業員数データの差分更新
     - 監視・異常検知・通知
     """
@@ -189,31 +189,31 @@ class StableAPIManager:
             self.logger.error(f"異常検知処理エラー: {e}")
     
     def fetch_and_store_actively_trading_list(self) -> bool:
-        """actively-trading-list を取得してDBに保存"""
+        """actively-trading-list を取得してsymbol_statusに保存"""
         step_name = "actively-trading-list取得"
         start_time = self._log_step_start(step_name)
-        
+
         try:
             # API からデータ取得
             self.logger.info("actively-trading-list を取得中...")
             data = self.api.get_actively_trading_list()
             self.stats['api_requests'] += 1
-            
+
             if not data:
                 self.logger.error("actively-trading-list が空です")
                 self._log_step_end(step_name, start_time, 0, 1)
                 return False
-            
+
             current_count = len(data)
             self.stats['actively_trading_fetched'] = current_count
             self.logger.info(f"actively-trading-list: {current_count}件取得")
-            
+
             # 過去3ヶ月の平均件数と比較して異常検知
             baseline_count = self._get_actively_trading_baseline()
             if baseline_count > 0:
                 change_pct = abs(current_count - baseline_count) / baseline_count * 100
                 threshold = self.anomaly_thresholds['actively_trading_volume_change_pct']
-                
+
                 if change_pct > threshold:
                     severity = "ALERT" if change_pct > threshold * 2 else "WARN"
                     self._detect_and_notify_anomaly(
@@ -224,35 +224,37 @@ class StableAPIManager:
                         message=f"actively-trading-list件数が過去平均から{change_pct:.1f}%変動しました",
                         severity=severity
                     )
-            
-            # DB に保存（UPSERT）
+
+            # symbol_status に保存（UPSERT）
+            # 後でcompany_profileから詳細情報で更新されるため、ここでは基本情報のみ保存
             with self.db_engine.connect() as conn:
                 success_count = 0
                 for item in data:
                     symbol = item.get('symbol', '')
                     name = item.get('name', '')
-                    
+
                     if not symbol:
                         continue
-                    
-                    # UPSERT処理
+
+                    # symbol_statusに基本情報を保存
+                    # exchangeやis_activeは後のステップで更新される
                     query = text("""
-                        INSERT INTO fmp_data.active_trading_symbols (symbol, name, last_seen_at, updated_at)
-                        VALUES (:symbol, :name, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                        INSERT INTO fmp_data.symbol_status
+                        (symbol, name, exchange, type, is_active, manually_deactivated, last_updated)
+                        VALUES (:symbol, :name, '', 'stock', true, false, CURRENT_TIMESTAMP)
                         ON CONFLICT (symbol) DO UPDATE SET
                             name = EXCLUDED.name,
-                            last_seen_at = EXCLUDED.last_seen_at,
-                            updated_at = EXCLUDED.updated_at
+                            last_updated = EXCLUDED.last_updated
                     """)
                     conn.execute(query, {'symbol': symbol, 'name': name})
                     success_count += 1
-                
+
                 conn.commit()
-                self.logger.info(f"active_trading_symbols テーブルに {success_count}件保存")
-            
+                self.logger.info(f"symbol_status テーブルに {success_count}件保存")
+
             self._log_step_end(step_name, start_time, success_count, 0)
             return True
-            
+
         except Exception as e:
             self.logger.error(f"actively-trading-list取得エラー: {e}")
             self.stats['api_errors'] += 1
@@ -260,16 +262,16 @@ class StableAPIManager:
             return False
     
     def _get_actively_trading_baseline(self) -> float:
-        """過去3ヶ月のactively-trading-list平均件数を取得"""
+        """過去3ヶ月のsymbol_status平均件数を取得"""
         try:
             with self.db_engine.connect() as conn:
                 query = text("""
                     SELECT AVG(daily_count) as avg_count
                     FROM (
-                        SELECT DATE(updated_at) as date, COUNT(*) as daily_count
-                        FROM fmp_data.active_trading_symbols
-                        WHERE updated_at >= CURRENT_DATE - INTERVAL '90 days'
-                        GROUP BY DATE(updated_at)
+                        SELECT DATE(last_updated) as date, COUNT(*) as daily_count
+                        FROM fmp_data.symbol_status
+                        WHERE last_updated >= CURRENT_DATE - INTERVAL '90 days'
+                        GROUP BY DATE(last_updated)
                     ) daily_stats
                 """)
                 result = conn.execute(query)
@@ -280,20 +282,20 @@ class StableAPIManager:
             return 0.0
     
     def fetch_and_store_company_profiles(self, limit: Optional[int] = None) -> bool:
-        """全active_trading_symbolsの会社プロファイルを取得してDBに保存"""
+        """symbol_statusの銘柄に対して会社プロファイルを取得してDBに保存"""
         step_name = "company-profile取得"
         start_time = self._log_step_start(step_name)
-        
+
         try:
-            # active_trading_symbols から銘柄リストを取得
+            # symbol_status から銘柄リストを取得
             with self.db_engine.connect() as conn:
-                query = text("SELECT symbol FROM fmp_data.active_trading_symbols ORDER BY symbol")
+                query = text("SELECT symbol FROM fmp_data.symbol_status ORDER BY symbol")
                 if limit:
-                    query = text(f"SELECT symbol FROM fmp_data.active_trading_symbols ORDER BY symbol LIMIT {limit}")
-                
+                    query = text(f"SELECT symbol FROM fmp_data.symbol_status ORDER BY symbol LIMIT {limit}")
+
                 result = conn.execute(query)
                 symbols = [row[0] for row in result]
-            
+
             total_symbols = len(symbols)
             self.logger.info(f"company-profile取得対象: {total_symbols}銘柄")
             
@@ -460,7 +462,7 @@ class StableAPIManager:
                     'dcf_diff': profile_data.get('dcfDiff'),
                     'dcf': profile_data.get('dcf'),
                     'image': profile_data.get('image'),
-                    'ipo_date': profile_data.get('ipoDate'),
+                    'ipo_date': profile_data.get('ipoDate') if profile_data.get('ipoDate') and profile_data.get('ipoDate').strip() else None,
                     'default_image': 1 if profile_data.get('defaultImage') is True else 0 if profile_data.get('defaultImage') is False else None,
                     'is_etf': 1 if profile_data.get('isEtf') is True else 0 if profile_data.get('isEtf') is False else None,
                     'is_actively_trading': 1 if profile_data.get('isActivelyTrading') is True else 0 if profile_data.get('isActivelyTrading') is False else None,

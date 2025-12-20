@@ -1126,12 +1126,16 @@ class WeeklyABAnalyzer:
 def main():
     """Example usage and CLI interface"""
     import argparse
-    
+    from investment_toolkit.utilities.paths import get_or_create_reports_config
+
+    _reports_config = get_or_create_reports_config()
+    default_output = _reports_config.graphs_dir / f'weekly_ab_analysis_{datetime.now().strftime("%Y%m%d")}.html'
+
     parser = argparse.ArgumentParser(description='Weekly AB Analysis Report Generator')
     parser.add_argument('--weeks', '-w', type=int, default=4,
                        help='Number of weeks to analyze')
-    parser.add_argument('--output', '-o', 
-                       default=f'reports/weekly_ab_analysis_{datetime.now().strftime("%Y%m%d")}.html',
+    parser.add_argument('--output', '-o',
+                       default=str(default_output),
                        help='Output HTML file path')
     parser.add_argument('--config', '-c', help='Configuration file path')
     

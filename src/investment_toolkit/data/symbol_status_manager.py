@@ -145,7 +145,6 @@ def load_markets_config(config_file=None):
                     "name": "日本",
                     "exchanges": ["Tokyo"],
                     "symbol_pattern": "\\.T$",
-                    "symbols_file": "config/symbols_jp.txt",
                     "enabled": True
                 },
                 {
@@ -153,7 +152,6 @@ def load_markets_config(config_file=None):
                     "name": "米国",
                     "exchanges": ["NYSE", "NASDAQ", "AMEX"],
                     "symbol_pattern": "^[A-Z]+$",
-                    "symbols_file": "config/symbols_us.txt",
                     "enabled": True
                 }
             ]

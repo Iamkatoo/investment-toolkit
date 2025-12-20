@@ -28,7 +28,10 @@ from typing import Tuple, List, Dict, Optional
 import requests
 import time
 import socket
-# requests, time, threading - APIサーバー自動起動で使用していたが削除
+
+# .envファイルを読み込み（環境変数設定）
+from dotenv import load_dotenv
+load_dotenv()
 
 # プロジェクトのルートディレクトリをPythonのパスに追加
 project_root = Path(__file__).resolve().parent.parent.parent.parent
@@ -410,13 +413,16 @@ def fetch_daily_top10_rankings(engine, rank_date=None):
     }
 
 
-# レポート出力先ディレクトリ
-REPORT_DIR = Path(__file__).resolve().parent.parent.parent.parent / "reports"
-GRAPHS_DIR = REPORT_DIR / "graphs"
+# レポート出力先ディレクトリ（一元化されたpaths.pyモジュールを使用）
+from investment_toolkit.utilities.paths import get_or_create_reports_config
+
+_reports_config = get_or_create_reports_config()
+REPORT_DIR = _reports_config.base_dir
+GRAPHS_DIR = _reports_config.graphs_dir
 
 # iCloud用のレポート出力先ディレクトリ
-ICLOUD_REPORT_DIR = Path("/Users/HOME/Library/Mobile Documents/com~apple~CloudDocs/reports")
-ICLOUD_GRAPHS_DIR = ICLOUD_REPORT_DIR / "graphs"
+ICLOUD_REPORT_DIR = _reports_config.icloud_base_dir if _reports_config.icloud_enabled else None
+ICLOUD_GRAPHS_DIR = (ICLOUD_REPORT_DIR / "graphs") if ICLOUD_REPORT_DIR else None
 
 # サンプルデータを生成するための開始日(データがない場合のフォールバック用)
 DEFAULT_START_DATE = '2020-01-01'
@@ -1842,9 +1848,13 @@ def find_available_port(start_port: int = 8080, max_attempts: int = 10) -> int:
     return start_port  # 見つからない場合はデフォルトを返す
 
 
-def start_http_server(port: int, directory: str = "reports") -> Optional[subprocess.Popen]:
+def start_http_server(port: int, directory: Optional[str] = None) -> Optional[subprocess.Popen]:
     """HTTPサーバーを起動する"""
     try:
+        # ディレクトリのデフォルト値をREPORT_DIRに設定
+        if directory is None:
+            directory = str(REPORT_DIR)
+
         # ディレクトリの存在確認
         if not os.path.exists(directory):
             print(f"⚠️ ディレクトリが存在しません: {directory}")

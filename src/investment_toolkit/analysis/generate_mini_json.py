@@ -37,6 +37,7 @@ sys.path.insert(0, str(project_root))
 
 # プロジェクト内のモジュールをインポート
 from investment_toolkit.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+from investment_toolkit.utilities.paths import get_or_create_reports_config
 
 # ログ設定
 LOG_DIR = project_root / "logs"
@@ -54,8 +55,8 @@ LOG = logging.getLogger("mini_json")
 
 # 設定
 LOOKBACK = 120  # 足数（約半年）
-OUT_DIR = project_root / "reports" / "mini_json"
-OUT_DIR.mkdir(exist_ok=True)
+_reports_config = get_or_create_reports_config()
+OUT_DIR = _reports_config.mini_json_dir
 
 
 def connect_to_database():

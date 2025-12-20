@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Tuple, List
 from io import StringIO
 from datetime import timedelta, datetime
+import os
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -18,8 +19,15 @@ from sqlalchemy import text
 # --------------------------------------------------------------------------
 # 設定
 # --------------------------------------------------------------------------
-CONFIG_DIR = Path(__file__).resolve().parents[3] / "config"
-PORTFOLIO_JSON = CONFIG_DIR / "portfolio.json"
+# 環境変数でポートフォリオファイルのパスを指定可能
+# 指定がない場合は、親プロジェクトのconfigディレクトリを探す
+if "PORTFOLIO_JSON_PATH" in os.environ:
+    PORTFOLIO_JSON = Path(os.environ["PORTFOLIO_JSON_PATH"])
+else:
+    # デフォルト: /Users/HOME/Codes/Investment/config/portfolio.json
+    # investment-toolkit/src/investment_toolkit/analysis/ から見て ../../../.. が親ディレクトリ
+    CONFIG_DIR = Path(__file__).resolve().parents[4] / "config"
+    PORTFOLIO_JSON = CONFIG_DIR / "portfolio.json"
 
 
 # --------------------------------------------------------------------------

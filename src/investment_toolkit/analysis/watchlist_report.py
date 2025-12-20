@@ -1613,11 +1613,12 @@ if __name__ == "__main__":
         # レポート生成
         print("📝 HTMLレポート生成中...")
         html_content = generate_mini_chart_watchlist_html(engine)
-        
+
         # ファイル保存
-        output_path = Path("reports/graphs/watchlist_report_mini.html")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        
+        from investment_toolkit.utilities.paths import get_or_create_reports_config
+        _reports_config = get_or_create_reports_config()
+        output_path = _reports_config.graphs_dir / "watchlist_report_mini.html"
+
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(html_content)
             
