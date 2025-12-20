@@ -48,13 +48,44 @@ investment_toolkit/
 
 ## Configuration
 
-Copy `.env.example` to `.env` and configure your environment variables:
+### Environment Variables
+
+This package uses environment variables for configuration. Copy `.env.example` to `.env` and configure your settings:
 
 ```bash
 cp .env.example .env
 ```
 
+### Key Configuration Options
+
+**Database Configuration**
+- `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_HOST`, `DB_PORT`
+
+**Reports Output**
+- `REPORTS_BASE_DIR`: Base directory for report outputs (default: `../investment-reports`)
+- `ENABLE_ICLOUD_SYNC`: Enable iCloud sync for reports (default: `false`)
+- `ICLOUD_REPORTS_DIR`: iCloud reports directory (required if sync enabled)
+
+**External Repository Integration**
+- `INVESTMENT_WORKSPACE_ROOT`: Path to investment-workspace repository (default: `../investment-workspace`)
+- `PORTFOLIO_JSON_PATH`: Path to portfolio.json file (default: `../investment-workspace/config/portfolio.json`)
+
+**API Keys**
+- `FMP_API_KEY_PRIMARY`, `FMP_API_KEY_SECONDARY`: Financial Modeling Prep API keys
+- `FRED_API_KEY`: Federal Reserve Economic Data API key
+- `JQUANTS_EMAIL`, `JQUANTS_PASSWORD`: J-Quants API credentials
+
 See [.env.example](.env.example) for all available configuration options.
+
+### Multi-Repository Setup
+
+This toolkit is designed to work with companion repositories:
+
+- **investment-toolkit** (this repo): Core Python package
+- **investment-reports**: Generated reports and visualizations (gitignored)
+- **investment-workspace**: Personal scripts and portfolio configuration (private)
+
+The `.env` file (gitignored) contains paths to these repositories, allowing secure separation of public code and private data.
 
 ## Usage
 
