@@ -263,9 +263,9 @@ class ScoringV2Engine:
             self.fundamental_calculator = FundamentalTrendCalculator()
             self.quality_value_calculator = QualityValueCalculator()
             self.momentum_calculator = PriceMomentumCalculator()
-            
+
             # Processing engines
-            self.normalization_engine = NormalizationEngine()
+            self.normalization_engine = NormalizationEngine(schema_path=self.schema_path)
             self.pillar_scoring = PillarScoringEngine(self.schema_path)
             
             # Validation system
