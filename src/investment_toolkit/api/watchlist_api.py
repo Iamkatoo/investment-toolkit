@@ -265,29 +265,28 @@ if FLASK_AVAILABLE:
             import sys
             from pathlib import Path
 
-            # スクリプトのパス（環境変数から取得、デフォルトは investment-workspace）
+            # ワークスペースのルートディレクトリを取得
             print(f"🔍 project_root: {project_root}")
             workspace_root = os.getenv(
                 'INVESTMENT_WORKSPACE_ROOT',
                 str(Path(project_root).parent / 'investment-workspace')
             )
             print(f"🔍 workspace_root: {workspace_root}")
-            script_path = Path(workspace_root) / "scripts" / "generate_single_stock_report.py"
-            print(f"🔍 script_path: {script_path}")
-            print(f"🔍 script_path.exists(): {script_path.exists()}")
 
-            if not script_path.exists():
-                return jsonify({
-                    'success': False,
-                    'error': f'generate_single_stock_report.py が見つかりません: {script_path}'
-                }), 500
-
-            # サブプロセスでスクリプトを実行
-            cmd = [sys.executable, str(script_path), '--symbol', symbol, '--no-browser']
+            # サブプロセスでスクリプトを実行（workspaceディレクトリで実行）
+            # generate_single_stock_report.pyはworkspace/scriptsにあり、
+            # そこからinvestment_toolkitモジュールをインポートする
+            cmd = [
+                sys.executable,
+                str(Path(workspace_root) / "scripts" / "generate_single_stock_report.py"),
+                '--symbol', symbol,
+                '--no-browser'
+            ]
 
             print(f"📝 実行コマンド: {' '.join(cmd)}")
 
             # タイムアウト付きで実行（60秒）
+            # cwdをworkspace_rootに設定することで、相対パスが正しく解決される
             result = subprocess.run(
                 cmd,
                 capture_output=True,

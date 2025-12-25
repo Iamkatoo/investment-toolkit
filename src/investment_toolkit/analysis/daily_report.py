@@ -1209,8 +1209,8 @@ def generate_reports(engine, df_merged, df_scored, df_scored_long, *, offline: b
     # 12. ミニチャート用JSON生成
     print("ミニチャート用JSONを生成中...")
     try:
-        subprocess.run([sys.executable, "src/analysis/generate_mini_json.py"], 
-                      check=True, cwd=project_root)
+        subprocess.run([sys.executable, "-m", "investment_toolkit.analysis.generate_mini_json"],
+                      check=True)
         print("  ✅ ミニチャート用JSON生成完了")
     except subprocess.CalledProcessError as e:
         print(f"  ⚠️ ミニチャート用JSON生成エラー: {e}")
@@ -1912,17 +1912,9 @@ def ensure_watchlist_api_server() -> Optional[subprocess.Popen]:
     try:
         print(f"🚀 ウォッチリストAPIサーバーを起動中 (ポート {api_port})...")
 
-        # watchlist_api.pyのパスを取得
-        api_script = Path(__file__).parent.parent / "api" / "watchlist_api.py"
-
-        if not api_script.exists():
-            print(f"⚠️ ウォッチリストAPIスクリプトが見つかりません: {api_script}")
-            print(f"   詳細レポート生成機能は利用できません")
-            return None
-
-        # APIサーバーをバックグラウンドで起動
+        # APIサーバーをバックグラウンドで起動（モジュールとして実行）
         process = subprocess.Popen(
-            [sys.executable, str(api_script), "--port", str(api_port)],
+            [sys.executable, "-m", "investment_toolkit.api.watchlist_api", "--port", str(api_port)],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL
         )
