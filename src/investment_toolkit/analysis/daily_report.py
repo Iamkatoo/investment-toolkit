@@ -593,8 +593,8 @@ def fetch_stock_data(engine, start_date='2010-01-01'):
 def fetch_forex_data(engine, start_date='2010-01-01'):
     """為替データを取得"""
     query = text("""
-    SELECT symbol, date, price 
-    FROM fmp_data.forex
+    SELECT symbol, date, price
+    FROM fred_data.forex
     WHERE symbol IN (
       'USDJPY', 'EURUSD', 'GBPUSD', 'USDCAD', 
       'AUDUSD', 'USDCHF', 'EURJPY', 'GBPJPY'
@@ -2172,7 +2172,7 @@ def main():
             print(f"   ✅ 為替データ取得成功: {len(df_forex)}件")
         except Exception as forex_error:
             print(f"❌ 為替データ取得エラー: {forex_error}")
-            print("🔧 対象テーブル: fmp_data.forex")
+            print("🔧 対象テーブル: fred_data.forex")
             return
         
         # 経済指標データ
