@@ -193,6 +193,7 @@ class DatabaseChecker:
         expected_min_rows = config.get("expected_min_rows")
         description = config.get("description", "")
         is_earnings_statement = config.get("is_earnings_statement", False)
+        require_tuesday_check = config.get("require_tuesday_check", False)
 
         # 期待される日付を計算
         expected_date = self.date_calculator.get_expected_date(
@@ -265,7 +266,21 @@ class DatabaseChecker:
                     result.expected_count = None
 
             # ステータスを判定
-            if is_earnings_statement:
+            if require_tuesday_check:
+                # 火曜日チェックロジック (FREDのforexデータ用)
+                # 火曜日のみデータなしをエラーとし、他の曜日はOK
+                weekday = (reference_date or datetime.now()).weekday()  # 0=月曜, 1=火曜, ...
+                if actual_count > 0:
+                    result.status = "ok"
+                    result.message = f"{description}: データ正常 ({actual_count}件)"
+                elif weekday == 1:  # 火曜日
+                    result.status = "error"
+                    result.message = f"{description}: 火曜日にデータなし ({actual_count}件) - FRED更新が必要"
+                else:
+                    # 月水木金土日はデータがなくてもOK (週次更新のため)
+                    result.status = "ok"
+                    result.message = f"{description}: データ取得スキップ (週次更新のため) ({actual_count}件)"
+            elif is_earnings_statement:
                 # 決算情報テーブルの特別なステータス判定
                 if actual_count > 0:
                     result.status = "ok"
