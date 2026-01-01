@@ -235,19 +235,14 @@ class DatabaseChecker:
                 elif "cash_flow" in table:
                     statement_type = "cash"
 
-                if market == "us" and statement_type:
-                    # US市場: earningsテーブルのpendingステータスから期待値を取得
-                    result.expected_count = self.get_pending_earnings_count(
+                if statement_type:
+                    # 本日処理された銘柄数を期待値として取得
+                    result.expected_count = self.get_earnings_processed_count(
                         market=market,
                         statement_type=statement_type,
                         reference_date=reference_date
                     )
                     result.active_symbols_count = None
-                elif market == "jp":
-                    # JP市場: アクティブ銘柄数を期待値として表示
-                    active_count = self.get_active_symbols_count(market)
-                    result.expected_count = active_count
-                    result.active_symbols_count = active_count
             else:
                 # 通常のテーブルの期待件数計算
                 if expected_min_rows:
@@ -279,17 +274,32 @@ class DatabaseChecker:
                     result.message = f"{description}: データ取得スキップ (週次更新のため) ({actual_count}件)"
             elif is_earnings_statement:
                 # 決算情報テーブルの特別なステータス判定
-                if actual_count > 0:
+                # 分母 (expected_count) は本日処理された銘柄数
+                # 分子 (actual_count) は実際に取得できた銘柄数
+
+                if result.expected_count == 0:
+                    # 本日処理がない場合は正常（決算は毎日あるわけではない）
                     result.status = "ok"
-                    result.message = f"{description}: 今回取得 ({actual_count}/{result.expected_count}件)"
+                    result.message = f"{description}: 本日は処理なし (0/0件)"
+                elif actual_count == 0:
+                    # 処理はあったのに取得が0件の場合はエラー
+                    result.status = "error"
+                    result.message = f"{description}: 取得失敗 ({actual_count}/{result.expected_count}件)"
+                elif actual_count >= result.expected_count * 0.8:
+                    # 80%以上取得できていれば正常
+                    coverage = (actual_count / result.expected_count) * 100
+                    result.status = "ok"
+                    result.message = f"{description}: 取得成功 ({actual_count}/{result.expected_count}件, {coverage:.1f}%)"
+                elif actual_count >= result.expected_count * 0.5:
+                    # 50%以上80%未満は警告
+                    coverage = (actual_count / result.expected_count) * 100
+                    result.status = "warning"
+                    result.message = f"{description}: 取得率低下 ({actual_count}/{result.expected_count}件, {coverage:.1f}%)"
                 else:
-                    # 0件の場合
-                    if market == "us":
-                        result.status = "warning"
-                        result.message = f"{description}: 今回取得 ({actual_count}/{result.expected_count}件)"
-                    else:
-                        result.status = "ok"
-                        result.message = f"{description}: 今回取得 ({actual_count}/{result.expected_count}件)"
+                    # 50%未満はエラー
+                    coverage = (actual_count / result.expected_count) * 100
+                    result.status = "error"
+                    result.message = f"{description}: 取得率大幅低下 ({actual_count}/{result.expected_count}件, {coverage:.1f}%)"
             elif result.expected_count:
                 # 通常のテーブルの判定ロジック
                 if actual_count >= result.expected_count:
