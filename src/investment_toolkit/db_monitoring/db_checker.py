@@ -87,34 +87,34 @@ class DatabaseChecker:
             logger.error(f"アクティブ銘柄数の取得に失敗しました: {e}")
             return 0
 
-    def get_pending_earnings_count(self, market: str, statement_type: str, reference_date: datetime = None) -> int:
+    def get_earnings_processed_count(self, market: str, statement_type: str, reference_date: datetime = None) -> int:
         """
-        US市場の決算情報の期待件数を取得（earningsテーブルのpendingステータスから算出）
+        決算情報の期待件数を取得（本日処理された銘柄数）
+
+        本日 xxx_completed_at が更新された銘柄のうち、
+        アクティブかつ手動無効化されていない銘柄の数を返す。
+        これが「本日の取得処理で処理された銘柄数」となり、
+        監視の分母として使用される。
 
         Args:
-            market: 市場 ("us" のみ対応)
+            market: 市場 ("us" or "jp")
             statement_type: 決算情報の種類 ("income", "balance", "cash")
             reference_date: 基準日付（デフォルトは本日）
 
         Returns:
-            期待される決算情報の件数
+            本日処理された決算情報の件数
         """
-        if market != "us":
-            # JP市場は対象外（別ロジックで処理）
-            return 0
-
         if reference_date is None:
             reference_date = datetime.now()
 
-        # ステータスカラム名のマッピング
-        status_column_map = {
-            "income": "income_status",
-            "balance": "balance_status",
-            "cash": "cash_status"
+        # 決算カラムのタイムスタンプ取得
+        timestamp_column_map = {
+            "income": "income_completed_at",
+            "balance": "balance_completed_at",
+            "cash": "cash_completed_at"
         }
-
-        status_column = status_column_map.get(statement_type)
-        if not status_column:
+        timestamp_column = timestamp_column_map.get(statement_type)
+        if not timestamp_column:
             logger.error(f"Unknown statement_type: {statement_type}")
             return 0
 
@@ -124,32 +124,22 @@ class DatabaseChecker:
 
             # 市場に応じてexchangeを判定
             if market == "us":
-                exchange_condition = "exchange IN ('NASDAQ', 'NYSE', 'NASDAQ Global Select', 'New York Stock Exchange', 'NASDAQ Stock Exchange')"
+                exchange_condition = "ss.exchange IN ('NASDAQ', 'NYSE', 'NASDAQ Global Select', 'New York Stock Exchange', 'NASDAQ Stock Exchange')"
+            elif market == "jp":
+                exchange_condition = "ss.exchange = 'Tokyo'"
             else:
-                exchange_condition = "1=1"  # フォールバック
+                exchange_condition = "1=1"
 
-            # 決算カラムのタイムスタンプ取得
-            timestamp_column_map = {
-                "income": "income_completed_at",
-                "balance": "balance_completed_at",
-                "cash": "cash_completed_at"
-            }
-            timestamp_column = timestamp_column_map.get(statement_type, "income_completed_at")
-
-            # 本日よりreport_dateが前で、かつ該当のstatusがpending
-            # または過去7日以内にcompleteになったものを、
+            # 本日 xxx_completed_at が更新された銘柄を、
             # symbol_statusでアクティブかつ手動無効化されていない銘柄に限定してカウント
             query = f"""
                 SELECT COUNT(DISTINCT e.symbol)
                 FROM fmp_data.earnings e
                 INNER JOIN fmp_data.symbol_status ss ON e.symbol = ss.symbol
-                WHERE e.report_date < %s
-                  AND (e.{status_column} = 'pending'
-                       OR (e.{status_column} = 'complete'
-                           AND e.{timestamp_column} >= CURRENT_DATE - INTERVAL '7 days'))
+                WHERE e.{timestamp_column}::date = %s
                   AND ss.is_active = TRUE
                   AND ss.manually_deactivated = FALSE
-                  AND ss.{exchange_condition}
+                  AND {exchange_condition}
             """
 
             cursor.execute(query, (reference_date.date(),))
@@ -158,11 +148,11 @@ class DatabaseChecker:
             cursor.close()
             conn.close()
 
-            logger.debug(f"Pending {statement_type} statements for US market (active symbols only): {count}")
+            logger.debug(f"本日処理された {statement_type} statements ({market}市場): {count}")
             return count
 
         except Exception as e:
-            logger.error(f"Pending earnings count取得に失敗しました ({statement_type}): {e}")
+            logger.error(f"処理済み決算情報のカウント取得に失敗しました ({statement_type}): {e}")
             return 0
 
     def check_table(
