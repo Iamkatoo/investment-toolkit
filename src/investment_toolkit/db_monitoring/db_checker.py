@@ -217,10 +217,17 @@ class DatabaseChecker:
             cursor = conn.cursor()
 
             # 実際のレコード数を取得
+            # タイムスタンプ型のカラムは日付にキャストして比較
+            # (例: retrieved_at, created_at など)
+            if '_at' in date_column or 'timestamp' in date_column.lower():
+                date_comparison = f"{date_column}::date = %s"
+            else:
+                date_comparison = f"{date_column} = %s"
+
             query = f"""
                 SELECT COUNT(DISTINCT {count_column})
                 FROM {schema}.{table}
-                WHERE {date_column} = %s
+                WHERE {date_comparison}
             """
 
             cursor.execute(query, (expected_date,))
