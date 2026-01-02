@@ -125,12 +125,16 @@ class FMPDataManager:
             # APIからデータ取得
             employee_data = self.api.get_employee_count(symbol, limit=limit)
 
-            if not employee_data or len(employee_data) == 0:
+            # DataFrameの場合の空チェック
+            if employee_data is None or (isinstance(employee_data, pd.DataFrame) and employee_data.empty):
                 self.logger.warning(f"{symbol}の従業員数データが見つかりませんでした")
                 return False
 
-            # データをデータフレームに変換
-            df = pd.DataFrame(employee_data)
+            # データをデータフレームに変換（既にDataFrameの可能性もある）
+            if isinstance(employee_data, pd.DataFrame):
+                df = employee_data
+            else:
+                df = pd.DataFrame(employee_data)
 
             # カラム名をスネークケースに変換
             df.columns = [self._camel_to_snake(col) for col in df.columns]
@@ -141,6 +145,14 @@ class FMPDataManager:
 
             # fetched_at列を追加（現在時刻）
             df['fetched_at'] = datetime.datetime.now()
+
+            # 日付・時刻型への変換
+            if 'acceptance_time' in df.columns:
+                df['acceptance_time'] = pd.to_datetime(df['acceptance_time'], errors='coerce')
+            if 'period_of_report' in df.columns:
+                df['period_of_report'] = pd.to_datetime(df['period_of_report'], errors='coerce')
+            if 'filing_date' in df.columns:
+                df['filing_date'] = pd.to_datetime(df['filing_date'], errors='coerce')
 
             # データをDBに保存
             self.logger.info(f"{symbol}: {len(df)}件の従業員数データを保存")
