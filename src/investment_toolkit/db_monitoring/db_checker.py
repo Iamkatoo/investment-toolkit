@@ -44,6 +44,44 @@ class DatabaseChecker:
             logger.error(f"設定ファイルの読み込みに失敗しました: {e}")
             raise
 
+    def _get_exchange_condition(self, market: str) -> str:
+        """
+        市場に応じたexchange条件を取得
+
+        Args:
+            market: 市場 ("us" or "jp")
+
+        Returns:
+            SQL WHERE句のexchange条件
+        """
+        if market == "us":
+            return "ss.exchange IN ('NASDAQ', 'NYSE', 'NASDAQ Global Select', 'New York Stock Exchange', 'NASDAQ Stock Exchange')"
+        elif market == "jp":
+            return "ss.exchange = 'Tokyo'"
+        else:
+            return "1=1"
+
+    def _get_statement_type_from_table(self, table: str, is_ttm: bool = False) -> Optional[str]:
+        """
+        テーブル名から決算情報の種類を判定
+
+        Args:
+            table: テーブル名
+            is_ttm: TTMテーブルかどうか
+
+        Returns:
+            決算情報の種類 ("income", "balance", "cash") または None
+        """
+        prefix = "ttm_" if is_ttm else ""
+
+        if f"{prefix}income_statement" in table:
+            return "income"
+        elif f"{prefix}balance_sheet" in table:
+            return "balance"
+        elif f"{prefix}cash_flow" in table:
+            return "cash"
+        return None
+
     def get_active_symbols_count(self, market: str) -> int:
         """
         アクティブ銘柄数を取得
@@ -59,12 +97,7 @@ class DatabaseChecker:
             cursor = conn.cursor()
 
             # 市場に応じてexchangeを判定
-            if market == "us":
-                exchange_condition = "exchange IN ('NASDAQ', 'NYSE', 'NASDAQ Global Select', 'New York Stock Exchange', 'NASDAQ Stock Exchange')"
-            elif market == "jp":
-                exchange_condition = "exchange = 'Tokyo'"
-            else:
-                raise ValueError(f"Unknown market: {market}")
+            exchange_condition = self._get_exchange_condition(market)
 
             query = f"""
                 SELECT COUNT(*)
@@ -123,12 +156,7 @@ class DatabaseChecker:
             cursor = conn.cursor()
 
             # 市場に応じてexchangeを判定
-            if market == "us":
-                exchange_condition = "ss.exchange IN ('NASDAQ', 'NYSE', 'NASDAQ Global Select', 'New York Stock Exchange', 'NASDAQ Stock Exchange')"
-            elif market == "jp":
-                exchange_condition = "ss.exchange = 'Tokyo'"
-            else:
-                exchange_condition = "1=1"
+            exchange_condition = self._get_exchange_condition(market)
 
             # 本日 xxx_completed_at が更新された銘柄を、
             # symbol_statusでアクティブかつ手動無効化されていない銘柄に限定してカウント
@@ -203,12 +231,7 @@ class DatabaseChecker:
             cursor = conn.cursor()
 
             # 市場に応じてexchangeを判定
-            if market == "us":
-                exchange_condition = "ss.exchange IN ('NASDAQ', 'NYSE', 'NASDAQ Global Select', 'New York Stock Exchange', 'NASDAQ Stock Exchange')"
-            elif market == "jp":
-                exchange_condition = "ss.exchange = 'Tokyo'"
-            else:
-                exchange_condition = "1=1"
+            exchange_condition = self._get_exchange_condition(market)
 
             # 本日更新された銘柄のうち、TTMテーブルに最新決算データが反映されている銘柄数を取得
             query = f"""
@@ -298,13 +321,7 @@ class DatabaseChecker:
             # TTMテーブルの特別処理（実際の件数は専用関数で取得）
             if is_ttm_statement:
                 # テーブル名から決算情報の種類を判定
-                statement_type = None
-                if "ttm_income_statement" in table:
-                    statement_type = "income"
-                elif "ttm_balance_sheet" in table:
-                    statement_type = "balance"
-                elif "ttm_cash_flow" in table:
-                    statement_type = "cash"
+                statement_type = self._get_statement_type_from_table(table, is_ttm=True)
 
                 if statement_type:
                     # TTM計算が完了した銘柄数を取得（専用のカウント関数を使用）
@@ -338,13 +355,7 @@ class DatabaseChecker:
             # 決算情報テーブルの特別処理
             if is_earnings_statement:
                 # テーブル名から決算情報の種類を判定
-                statement_type = None
-                if "income_statement" in table:
-                    statement_type = "income"
-                elif "balance_sheet" in table:
-                    statement_type = "balance"
-                elif "cash_flow" in table:
-                    statement_type = "cash"
+                statement_type = self._get_statement_type_from_table(table, is_ttm=False)
 
                 if statement_type:
                     # 本日処理された銘柄数を期待値として取得
@@ -356,13 +367,7 @@ class DatabaseChecker:
                     result.active_symbols_count = None
             elif is_ttm_statement:
                 # TTMテーブルの期待件数処理
-                statement_type = None
-                if "ttm_income_statement" in table:
-                    statement_type = "income"
-                elif "ttm_balance_sheet" in table:
-                    statement_type = "balance"
-                elif "ttm_cash_flow" in table:
-                    statement_type = "cash"
+                statement_type = self._get_statement_type_from_table(table, is_ttm=True)
 
                 if statement_type:
                     # 本日処理された銘柄数を期待値として取得（元データの処理数）
