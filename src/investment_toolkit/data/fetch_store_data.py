@@ -63,15 +63,33 @@ class FMPDataManager:
         return self.api._get_latest_date(symbol, table_name, 'fmp_data', period_type)
     
     def fetch_and_store_employee_count(self, symbol):
-        """従業員数データを取得しDBに保存する"""
+        """
+        従業員数データを取得しDBに保存する
+
+        効率化ロジック:
+        1. 既存データの最新取得日を確認
+        2. 1年以上経過していない場合はスキップ
+        3. データが存在しない場合はlimit=100で全履歴取得
+        4. データがある場合はlimit=2で最新のみチェック
+
+        Args:
+            symbol (str): 証券コード
+
+        Returns:
+            bool: 成功時True、スキップまたは失敗時False
+        """
         try:
-            # 現在のデータの最新年度を取得
-            latest_year = None
+            # 既存データの最新取得日と件数を確認
+            latest_fetch_date = None
+            existing_count = 0
+
             try:
                 with self.db_engine.connect() as conn:
                     result = conn.execute(text(
                         """
-                        SELECT MAX(EXTRACT(YEAR FROM date)) as latest_year
+                        SELECT
+                            MAX(fetched_at) as latest_fetch,
+                            COUNT(*) as record_count
                         FROM fmp_data.employee_counts
                         WHERE symbol = :symbol
                         """),
@@ -79,43 +97,64 @@ class FMPDataManager:
                     )
                     row = result.fetchone()
                     if row and row[0]:
-                        latest_year = int(row[0])
-                        # 現在年から最新年を引いて、必要なlimitを計算
-                        current_year = datetime.datetime.now().year
-                        limit = current_year - latest_year
-                        if limit <= 0:
-                            # すでに最新データがある場合は1（最小値）を設定
-                            limit = 1
-                        else:
-                            # 安全のために+1年追加
-                            limit = limit + 1
-                    else:
-                        # データがない場合、デフォルトで5年分取得
-                        limit = 5
+                        latest_fetch_date = row[0]
+                        existing_count = row[1] or 0
             except Exception as e:
-                self.logger.warning(f"{symbol}の従業員数データの最新年度取得中にエラーが発生しました: {e}")
-                latest_year = None
-                limit = 5
+                self.logger.warning(f"{symbol}の従業員数データの確認中にエラーが発生しました: {e}")
+                latest_fetch_date = None
+                existing_count = 0
 
-            self.logger.info(f"{symbol}の従業員数データを取得します（limit={limit}）")
+            # 1年以内に取得済みの場合はスキップ
+            if latest_fetch_date:
+                days_since_fetch = (datetime.datetime.now() - latest_fetch_date).days
+                if days_since_fetch < 365:
+                    self.logger.info(f"{symbol}: 最終取得から{days_since_fetch}日（1年未満）のためスキップ")
+                    return False
+                else:
+                    self.logger.info(f"{symbol}: 最終取得から{days_since_fetch}日経過、更新を実行")
+
+            # limitを決定
+            # データが存在しない場合は全履歴取得、存在する場合は最新のみチェック
+            if existing_count == 0:
+                limit = 100  # 全履歴を取得
+                self.logger.info(f"{symbol}: 初回取得のためlimit=100で全履歴を取得")
+            else:
+                limit = 2  # 最新のみチェック
+                self.logger.info(f"{symbol}: 既存データあり（{existing_count}件）、limit=2で最新をチェック")
+
+            # APIからデータ取得
             employee_data = self.api.get_employee_count(symbol, limit=limit)
-            
+
             if not employee_data or len(employee_data) == 0:
                 self.logger.warning(f"{symbol}の従業員数データが見つかりませんでした")
                 return False
-            
+
             # データをデータフレームに変換
             df = pd.DataFrame(employee_data)
-            
+
+            # カラム名をスネークケースに変換
+            df.columns = [self._camel_to_snake(col) for col in df.columns]
+
             # symbol列がなければ追加
             if 'symbol' not in df.columns:
                 df['symbol'] = symbol
-            
+
+            # fetched_at列を追加（現在時刻）
+            df['fetched_at'] = datetime.datetime.now()
+
             # データをDBに保存
+            self.logger.info(f"{symbol}: {len(df)}件の従業員数データを保存")
             return self.save_to_database(df, 'employee_counts')
+
         except Exception as e:
             self.logger.error(f"{symbol}の従業員数データの取得・保存中にエラーが発生しました: {e}")
             return False
+
+    def _camel_to_snake(self, name):
+        """CamelCaseをsnake_caseに変換"""
+        import re
+        s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+        return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
             
     def fetch_and_store_company_profile(self, symbol):
         """会社プロファイルデータを取得しDBに保存する"""
@@ -292,12 +331,12 @@ class FMPDataManager:
                                 {", ".join([f"{col} = EXCLUDED.{col}" for col in df.columns if col != 'symbol'])}
                             """))
                         elif table_name == 'employee_counts':
-                            # 従業員数テーブルは(symbol, date)がユニーク
+                            # 従業員数テーブルは(symbol, period_of_report)がユニーク
                             conn.execute(text(f"""
                                 INSERT INTO {schema}.{table_name}
                                 SELECT * FROM {schema}.{temp_table}
-                                ON CONFLICT (symbol, date) DO UPDATE SET
-                                {", ".join([f"{col} = EXCLUDED.{col}" for col in df.columns if col not in ['symbol', 'date']])}
+                                ON CONFLICT (symbol, period_of_report) DO UPDATE SET
+                                {", ".join([f"{col} = EXCLUDED.{col}" for col in df.columns if col not in ['symbol', 'period_of_report']])}
                             """))
                         else:
                             # その他のテーブル
