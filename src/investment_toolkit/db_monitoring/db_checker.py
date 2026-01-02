@@ -155,6 +155,94 @@ class DatabaseChecker:
             logger.error(f"処理済み決算情報のカウント取得に失敗しました ({statement_type}): {e}")
             return 0
 
+    def get_ttm_calculated_count(self, market: str, statement_type: str, reference_date: datetime = None) -> int:
+        """
+        TTM決算情報の実際の取得件数を取得
+
+        本日 fmp_data.earnings.xxx_completed_at が更新された銘柄のうち、
+        対応するTTMテーブルに最新の決算データが反映されている銘柄数を返す。
+
+        Args:
+            market: 市場 ("us" or "jp")
+            statement_type: 決算情報の種類 ("income", "balance", "cash")
+            reference_date: 基準日付（デフォルトは本日）
+
+        Returns:
+            TTM計算が完了した銘柄数
+        """
+        if reference_date is None:
+            reference_date = datetime.now()
+
+        # テーブル名のマッピング
+        source_table_map = {
+            "income": "income_statements",
+            "balance": "balance_sheets",
+            "cash": "cash_flows"
+        }
+        ttm_table_map = {
+            "income": "ttm_income_statements",
+            "balance": "ttm_balance_sheets",
+            "cash": "ttm_cash_flows"
+        }
+        timestamp_column_map = {
+            "income": "income_completed_at",
+            "balance": "balance_completed_at",
+            "cash": "cash_completed_at"
+        }
+
+        source_table = source_table_map.get(statement_type)
+        ttm_table = ttm_table_map.get(statement_type)
+        timestamp_column = timestamp_column_map.get(statement_type)
+
+        if not all([source_table, ttm_table, timestamp_column]):
+            logger.error(f"Unknown statement_type: {statement_type}")
+            return 0
+
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            # 市場に応じてexchangeを判定
+            if market == "us":
+                exchange_condition = "ss.exchange IN ('NASDAQ', 'NYSE', 'NASDAQ Global Select', 'New York Stock Exchange', 'NASDAQ Stock Exchange')"
+            elif market == "jp":
+                exchange_condition = "ss.exchange = 'Tokyo'"
+            else:
+                exchange_condition = "1=1"
+
+            # 本日更新された銘柄のうち、TTMテーブルに最新決算データが反映されている銘柄数を取得
+            query = f"""
+                SELECT COUNT(DISTINCT ttm.symbol)
+                FROM calculated_metrics.{ttm_table} ttm
+                INNER JOIN (
+                    SELECT
+                        src.symbol,
+                        MAX(src.date) as latest_date
+                    FROM fmp_data.{source_table} src
+                    INNER JOIN fmp_data.earnings e ON src.symbol = e.symbol
+                    INNER JOIN fmp_data.symbol_status ss ON src.symbol = ss.symbol
+                    WHERE e.{timestamp_column}::date = %s
+                      AND ss.is_active = TRUE
+                      AND ss.manually_deactivated = FALSE
+                      AND {exchange_condition}
+                    GROUP BY src.symbol
+                ) updated_symbols ON ttm.symbol = updated_symbols.symbol
+                WHERE ttm.as_of_date = updated_symbols.latest_date
+            """
+
+            cursor.execute(query, (reference_date.date(),))
+            count = cursor.fetchone()[0]
+
+            cursor.close()
+            conn.close()
+
+            logger.debug(f"TTM {statement_type} 計算完了 ({market}市場): {count}")
+            return count
+
+        except Exception as e:
+            logger.error(f"TTM決算情報のカウント取得に失敗しました ({statement_type}): {e}")
+            return 0
+
     def check_table(
         self,
         schema: str,
