@@ -271,6 +271,7 @@ class DatabaseChecker:
         expected_min_rows = config.get("expected_min_rows")
         description = config.get("description", "")
         is_earnings_statement = config.get("is_earnings_statement", False)
+        is_ttm_statement = config.get("is_ttm_statement", False)
         require_tuesday_check = config.get("require_tuesday_check", False)
 
         # 期待される日付を計算
