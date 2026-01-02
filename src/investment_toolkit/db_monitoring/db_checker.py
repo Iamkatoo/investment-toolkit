@@ -295,23 +295,45 @@ class DatabaseChecker:
             conn = get_db_connection()
             cursor = conn.cursor()
 
-            # 実際のレコード数を取得
-            # タイムスタンプ型のカラムは日付にキャストして比較
-            # (例: retrieved_at, created_at など)
-            if '_at' in date_column or 'timestamp' in date_column.lower():
-                date_comparison = f"{date_column}::date = %s"
+            # TTMテーブルの特別処理（実際の件数は専用関数で取得）
+            if is_ttm_statement:
+                # テーブル名から決算情報の種類を判定
+                statement_type = None
+                if "ttm_income_statement" in table:
+                    statement_type = "income"
+                elif "ttm_balance_sheet" in table:
+                    statement_type = "balance"
+                elif "ttm_cash_flow" in table:
+                    statement_type = "cash"
+
+                if statement_type:
+                    # TTM計算が完了した銘柄数を取得（専用のカウント関数を使用）
+                    actual_count = self.get_ttm_calculated_count(
+                        market=market,
+                        statement_type=statement_type,
+                        reference_date=reference_date
+                    )
+                    result.actual_count = actual_count
+                else:
+                    result.actual_count = 0
             else:
-                date_comparison = f"{date_column} = %s"
+                # 通常テーブルの実際のレコード数を取得
+                # タイムスタンプ型のカラムは日付にキャストして比較
+                # (例: retrieved_at, created_at など)
+                if '_at' in date_column or 'timestamp' in date_column.lower():
+                    date_comparison = f"{date_column}::date = %s"
+                else:
+                    date_comparison = f"{date_column} = %s"
 
-            query = f"""
-                SELECT COUNT(DISTINCT {count_column})
-                FROM {schema}.{table}
-                WHERE {date_comparison}
-            """
+                query = f"""
+                    SELECT COUNT(DISTINCT {count_column})
+                    FROM {schema}.{table}
+                    WHERE {date_comparison}
+                """
 
-            cursor.execute(query, (expected_date,))
-            actual_count = cursor.fetchone()[0]
-            result.actual_count = actual_count
+                cursor.execute(query, (expected_date,))
+                actual_count = cursor.fetchone()[0]
+                result.actual_count = actual_count
 
             # 決算情報テーブルの特別処理
             if is_earnings_statement:
@@ -326,6 +348,24 @@ class DatabaseChecker:
 
                 if statement_type:
                     # 本日処理された銘柄数を期待値として取得
+                    result.expected_count = self.get_earnings_processed_count(
+                        market=market,
+                        statement_type=statement_type,
+                        reference_date=reference_date
+                    )
+                    result.active_symbols_count = None
+            elif is_ttm_statement:
+                # TTMテーブルの期待件数処理
+                statement_type = None
+                if "ttm_income_statement" in table:
+                    statement_type = "income"
+                elif "ttm_balance_sheet" in table:
+                    statement_type = "balance"
+                elif "ttm_cash_flow" in table:
+                    statement_type = "cash"
+
+                if statement_type:
+                    # 本日処理された銘柄数を期待値として取得（元データの処理数）
                     result.expected_count = self.get_earnings_processed_count(
                         market=market,
                         statement_type=statement_type,
@@ -361,8 +401,8 @@ class DatabaseChecker:
                     # 月水木金土日はデータがなくてもOK (週次更新のため)
                     result.status = "ok"
                     result.message = f"{description}: データ取得スキップ (週次更新のため) ({actual_count}件)"
-            elif is_earnings_statement:
-                # 決算情報テーブルの特別なステータス判定
+            elif is_earnings_statement or is_ttm_statement:
+                # 決算情報テーブル・TTMテーブルの特別なステータス判定
                 # 分母 (expected_count) は本日処理された銘柄数
                 # 分子 (actual_count) は実際に取得できた銘柄数
 
