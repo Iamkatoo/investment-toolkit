@@ -296,6 +296,7 @@ class DatabaseChecker:
         is_earnings_statement = config.get("is_earnings_statement", False)
         is_ttm_statement = config.get("is_ttm_statement", False)
         require_tuesday_check = config.get("require_tuesday_check", False)
+        is_double_count = config.get("is_double_count", False)
 
         # 期待される日付を計算
         expected_date = self.date_calculator.get_expected_date(
@@ -385,8 +386,15 @@ class DatabaseChecker:
                 elif threshold_pct:
                     # アクティブ銘柄数ベースの場合
                     active_count = self.get_active_symbols_count(market)
-                    result.active_symbols_count = active_count
-                    result.expected_count = int(active_count * (threshold_pct / 100.0))
+
+                    # is_double_countフラグがある場合は母数を2倍にする
+                    # (例: score_rankings_v2は日次と週次の両方を格納するため)
+                    if is_double_count:
+                        result.active_symbols_count = active_count * 2
+                    else:
+                        result.active_symbols_count = active_count
+
+                    result.expected_count = int(result.active_symbols_count * (threshold_pct / 100.0))
                 else:
                     # 期待件数なし（存在チェックのみ）
                     result.expected_count = None

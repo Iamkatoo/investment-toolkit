@@ -140,10 +140,17 @@ class MonitorResult:
                 "error": "❌"
             }.get(result.status, "❓")
 
-            # 件数表示（期待値があれば表示）
-            if result.expected_count is not None:
+            # 件数表示
+            # 通常のテーブル（active_symbols_countがある場合）は母数としてactive_symbols_countを表示
+            # 決算情報テーブル・TTMテーブル（active_symbols_countがNoneの場合）はexpected_countを表示
+            if result.active_symbols_count is not None:
+                # 通常のテーブル: アクティブ銘柄数を母数として表示
+                count_str = f"{result.actual_count}/{result.active_symbols_count}"
+            elif result.expected_count is not None:
+                # 決算情報テーブル・TTMテーブル: 処理された銘柄数を母数として表示
                 count_str = f"{result.actual_count}/{result.expected_count}"
             else:
+                # 期待値なし
                 count_str = f"{result.actual_count}"
 
             lines.append(f"{status_icon} {result.full_table_name}: {count_str} {result.status.upper()}")
