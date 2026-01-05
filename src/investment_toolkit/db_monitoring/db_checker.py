@@ -339,15 +339,31 @@ class DatabaseChecker:
                 # タイムスタンプ型のカラムは日付にキャストして比較
                 # (例: retrieved_at, created_at など)
                 if '_at' in date_column or 'timestamp' in date_column.lower():
-                    date_comparison = f"{date_column}::date = %s"
+                    date_comparison = f"t.{date_column}::date = %s"
                 else:
-                    date_comparison = f"{date_column} = %s"
+                    date_comparison = f"t.{date_column} = %s"
 
-                query = f"""
-                    SELECT COUNT(DISTINCT {count_column})
-                    FROM {schema}.{table}
-                    WHERE {date_comparison}
-                """
+                # 市場に応じてexchange条件を取得
+                exchange_condition = self._get_exchange_condition(market)
+
+                # count_columnがsymbolの場合は市場別にフィルタリング
+                if count_column == "symbol":
+                    query = f"""
+                        SELECT COUNT(DISTINCT t.{count_column})
+                        FROM {schema}.{table} t
+                        INNER JOIN fmp_data.symbol_status ss ON t.symbol = ss.symbol
+                        WHERE {date_comparison}
+                          AND ss.is_active = TRUE
+                          AND ss.manually_deactivated = FALSE
+                          AND {exchange_condition}
+                    """
+                else:
+                    # symbol以外のcount_columnの場合は市場フィルタなし
+                    query = f"""
+                        SELECT COUNT(DISTINCT t.{count_column})
+                        FROM {schema}.{table} t
+                        WHERE {date_comparison}
+                    """
 
                 cursor.execute(query, (expected_date,))
                 actual_count = cursor.fetchone()[0]
