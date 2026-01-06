@@ -297,13 +297,19 @@ class DatabaseChecker:
         is_ttm_statement = config.get("is_ttm_statement", False)
         require_tuesday_check = config.get("require_tuesday_check", False)
         is_double_count = config.get("is_double_count", False)
+        use_current_date = config.get("use_current_date", False)
 
         # 期待される日付を計算
-        expected_date = self.date_calculator.get_expected_date(
-            market=market,
-            frequency=frequency,
-            reference_date=reference_date
-        )
+        if use_current_date:
+            # use_current_dateフラグがある場合は、市場に関わらず当日の日付を使用
+            expected_date = (reference_date or datetime.now()).strftime("%Y-%m-%d")
+        else:
+            # 通常の市場別・頻度別の日付計算
+            expected_date = self.date_calculator.get_expected_date(
+                market=market,
+                frequency=frequency,
+                reference_date=reference_date
+            )
 
         result = TableCheckResult(
             schema=schema,
