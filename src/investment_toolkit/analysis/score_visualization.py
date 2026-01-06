@@ -2312,6 +2312,7 @@ def generate_market_score_html(df_macro: pd.DataFrame, macro_components: Dict, d
                     market_flag = "🇺🇸" if row['market'] == 'us' else "🇯🇵"
                     top10_count = row.get('top10_count', 0)
                     company_name = row.get('company_name', row['symbol'])
+                    sector = row.get('sector', 'N/A')
                     row_class = "even-row" if idx % 2 == 1 else ""
 
                     rows_html += f"""
@@ -2321,7 +2322,7 @@ def generate_market_score_html(df_macro: pd.DataFrame, macro_components: Dict, d
                         <td style="font-weight: bold; font-family: monospace;">{row['symbol']}</td>
                         <td style="text-align: center; font-size: 1.2rem;">{market_flag}</td>
                         <td style="text-align: right; font-weight: 600; color: #2E7D32;">{row['score']:.2f}</td>
-                        <td style="text-align: right;">{row['percentile']:.2%}</td>
+                        <td style="text-align: center; color: #666;">{sector}</td>
                         <td style="text-align: right; color: #666;">{row['universe_size']:,}</td>
                         <td style="text-align: center; font-weight: 600; color: #1976D2;">{top10_count}回</td>
                         <td style="text-align: center; padding: 8px;">
