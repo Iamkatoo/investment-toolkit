@@ -101,9 +101,9 @@ class DatabaseChecker:
 
             query = f"""
                 SELECT COUNT(*)
-                FROM fmp_data.symbol_status
-                WHERE is_active = TRUE
-                  AND manually_deactivated = FALSE
+                FROM fmp_data.symbol_status ss
+                WHERE ss.is_active = TRUE
+                  AND ss.manually_deactivated = FALSE
                   AND {exchange_condition}
             """
 
