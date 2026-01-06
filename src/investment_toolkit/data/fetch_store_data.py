@@ -201,20 +201,22 @@ class FMPDataManager:
     def save_to_database(self, df, table_name, schema="fmp_data"):
         """
         DataFrameをデータベースに保存する
-        
+
         パラメータ:
             df (DataFrame): 保存するデータフレーム
             table_name (str): テーブル名
             schema (str): スキーマ名
-            
+
         戻り値:
             bool: 保存に成功したかどうか
         """
+        temp_table = None  # 一時テーブル名を追跡
+
         try:
             if df.empty:
                 self.logger.warning(f"保存するデータが空のため、{table_name}へのデータ保存をスキップします")
                 return False
-                
+
             # データベースに保存
             with self.db_engine.connect() as conn:
                 # daily_pricesテーブルの場合は特別に処理（日付型の問題などがあるため）
@@ -328,7 +330,11 @@ class FMPDataManager:
                         """))
                         
                         # 一時テーブルを削除
-                        conn.execute(text(f"DROP TABLE IF EXISTS {temp_table}"))
+                        try:
+                            conn.execute(text(f"DROP TABLE IF EXISTS {temp_table}"))
+                            temp_table = None  # 削除成功したのでNoneにリセット
+                        except Exception as drop_err:
+                            self.logger.warning(f"一時テーブル {temp_table} の削除に失敗: {drop_err}")
                     else:
                         # 通常の方法でデータフレームをテーブルに変換
                         df.to_sql(temp_table, conn, schema=schema, if_exists='replace', index=False)
@@ -359,16 +365,30 @@ class FMPDataManager:
                             """))
                         
                         # 一時テーブルを削除
-                        conn.execute(text(f"DROP TABLE IF EXISTS {schema}.{temp_table}"))
-                
+                        try:
+                            conn.execute(text(f"DROP TABLE IF EXISTS {schema}.{temp_table}"))
+                            temp_table = None  # 削除成功したのでNoneにリセット
+                        except Exception as drop_err:
+                            self.logger.warning(f"一時テーブル {schema}.{temp_table} の削除に失敗: {drop_err}")
+
                     # トランザクション確定
                     conn.commit()
-                    
+
                     self.logger.info(f"{table_name}テーブルに{len(df)}行のデータを保存しました")
                     return True
         except Exception as e:
             self.logger.error(f"{table_name}テーブルへのデータ保存中にエラーが発生: {e}")
             return False
+        finally:
+            # エラーが発生した場合でも一時テーブルを削除
+            if temp_table is not None:
+                try:
+                    with self.db_engine.connect() as conn:
+                        conn.execute(text(f"DROP TABLE IF EXISTS {schema}.{temp_table}"))
+                        conn.commit()
+                        self.logger.info(f"finally節で一時テーブル {schema}.{temp_table} を削除しました")
+                except Exception as cleanup_err:
+                    self.logger.error(f"finally節での一時テーブル削除に失敗: {cleanup_err}")
 
     def fetch_and_store_income_statements(self, symbol, period='annual'):
         """
