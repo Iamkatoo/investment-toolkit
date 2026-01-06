@@ -253,11 +253,11 @@ def _build_ranking_query(market: str) -> str:
         SELECT
             sr.symbol,
             sr.score,
-            sr.percentile,
             sr.universe_size,
             sr.market,
             sr.rank as original_rank,
-            COALESCE(cp.company_name, sr.symbol) as company_name
+            COALESCE(cp.company_name, sr.symbol) as company_name,
+            COALESCE(gics.raw_sector, 'N/A') as sector
         FROM backtest_results.score_rankings_v2 sr
         LEFT JOIN (
             SELECT DISTINCT ON (symbol)
@@ -265,6 +265,12 @@ def _build_ranking_query(market: str) -> str:
             FROM fmp_data.company_profile
             ORDER BY symbol, date DESC
         ) cp ON sr.symbol = cp.symbol
+        LEFT JOIN (
+            SELECT DISTINCT ON (symbol)
+                symbol, raw_sector
+            FROM reference.company_gics
+            ORDER BY symbol, updated_at DESC
+        ) gics ON sr.symbol = gics.symbol
         WHERE sr.ranking_scope = 'daily'
         AND sr.ranking_method = 'total_score'
         AND sr.market = :market
@@ -341,7 +347,7 @@ def fetch_daily_top10_rankings(engine, rank_date=None):
     --------
     dict
         {'combined': DataFrame, 'jp_date': str, 'us_date': str}
-        DataFrameには 'rank', 'symbol', 'score', 'percentile', 'universe_size', 'market' が含まれる
+        DataFrameには 'rank', 'symbol', 'score', 'sector', 'universe_size', 'market' が含まれる
     """
     from datetime import datetime, timedelta
 
