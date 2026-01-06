@@ -2405,7 +2405,7 @@ def generate_market_score_html(df_macro: pd.DataFrame, macro_components: Dict, d
                                 <th>銘柄コード</th>
                                 <th style="text-align: center;">市場</th>
                                 <th style="text-align: right;">スコア</th>
-                                <th style="text-align: right;">パーセンタイル</th>
+                                <th style="text-align: center;">セクター</th>
                                 <th style="text-align: right;">母集団</th>
                                 <th style="text-align: center;">Top10入り</th>
                                 <th style="text-align: center;">詳細分析</th>
