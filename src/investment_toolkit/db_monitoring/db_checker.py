@@ -353,7 +353,9 @@ class DatabaseChecker:
                 exchange_condition = self._get_exchange_condition(market)
 
                 # count_columnがsymbolの場合は市場別にフィルタリング
-                if count_column == "symbol":
+                # ただし、fred_dataなど株式以外のスキーマではsymbol_statusとのJOINをスキップ
+                if count_column == "symbol" and schema in ["fmp_data", "calculated_metrics", "backtest_results"]:
+                    # 株式データの場合はsymbol_statusとJOINして市場別にフィルタリング
                     query = f"""
                         SELECT COUNT(DISTINCT t.{count_column})
                         FROM {schema}.{table} t
@@ -364,7 +366,7 @@ class DatabaseChecker:
                           AND {exchange_condition}
                     """
                 else:
-                    # symbol以外のcount_columnの場合は市場フィルタなし
+                    # 株式以外のデータ（fred_data等）またはsymbol以外のcount_columnの場合
                     query = f"""
                         SELECT COUNT(DISTINCT t.{count_column})
                         FROM {schema}.{table} t
@@ -423,17 +425,18 @@ class DatabaseChecker:
 
             # ステータスを判定
             if require_tuesday_check:
-                # 火曜日チェックロジック (FREDのforexデータ用)
-                # 火曜日のみデータなしをエラーとし、他の曜日はOK
-                weekday = (reference_date or datetime.now()).weekday()  # 0=月曜, 1=火曜, ...
+                # 火曜日・水曜日チェックロジック (FREDのforexデータ用)
+                # 米国時間月曜または火曜更新 → 日本時間火曜または水曜に反映
+                # 火曜日・水曜日のみデータなしをエラーとし、他の曜日はOK
+                weekday = (reference_date or datetime.now()).weekday()  # 0=月曜, 1=火曜, 2=水曜, ...
                 if actual_count > 0:
                     result.status = "ok"
                     result.message = f"{description}: データ正常 ({actual_count}件)"
-                elif weekday == 1:  # 火曜日
+                elif weekday in [1, 2]:  # 火曜日または水曜日
                     result.status = "error"
-                    result.message = f"{description}: 火曜日にデータなし ({actual_count}件) - FRED更新が必要"
+                    result.message = f"{description}: 火曜/水曜にデータなし ({actual_count}件) - FRED更新が必要"
                 else:
-                    # 月水木金土日はデータがなくてもOK (週次更新のため)
+                    # 月木金土日はデータがなくてもOK (週次更新のため)
                     result.status = "ok"
                     result.message = f"{description}: データ取得スキップ (週次更新のため) ({actual_count}件)"
             elif is_earnings_statement or is_ttm_statement:
