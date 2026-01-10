@@ -183,6 +183,83 @@ class DatabaseChecker:
             logger.error(f"処理済み決算情報のカウント取得に失敗しました ({statement_type}): {e}")
             return 0
 
+    def get_statements_actual_count(self, market: str, statement_type: str, reference_date: datetime = None) -> int:
+        """
+        決算情報テーブルの実際の取得件数を取得
+
+        本日 fmp_data.earnings.xxx_completed_at が更新された銘柄のうち、
+        対応する決算テーブルに最新の filing_date を持つレコードが存在する銘柄数を返す。
+
+        Args:
+            market: 市場 ("us" or "jp")
+            statement_type: 決算情報の種類 ("income", "balance", "cash")
+            reference_date: 基準日付（デフォルトは本日）
+
+        Returns:
+            決算テーブルに最新レコードが存在する銘柄数
+        """
+        if reference_date is None:
+            reference_date = datetime.now()
+
+        # テーブル名のマッピング
+        source_table_map = {
+            "income": "income_statements",
+            "balance": "balance_sheets",
+            "cash": "cash_flows"
+        }
+        timestamp_column_map = {
+            "income": "income_completed_at",
+            "balance": "balance_completed_at",
+            "cash": "cash_completed_at"
+        }
+
+        source_table = source_table_map.get(statement_type)
+        timestamp_column = timestamp_column_map.get(statement_type)
+
+        if not all([source_table, timestamp_column]):
+            logger.error(f"Unknown statement_type: {statement_type}")
+            return 0
+
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            # 市場に応じてexchangeを判定
+            exchange_condition = self._get_exchange_condition(market)
+
+            # 本日更新された銘柄のうち、決算テーブルに最新filing_dateのレコードが存在する銘柄数を取得
+            query = f"""
+                SELECT COUNT(DISTINCT stmt.symbol)
+                FROM fmp_data.{source_table} stmt
+                INNER JOIN (
+                    SELECT
+                        src.symbol,
+                        MAX(src.filing_date) as latest_filing_date
+                    FROM fmp_data.{source_table} src
+                    INNER JOIN fmp_data.earnings e ON src.symbol = e.symbol
+                    INNER JOIN fmp_data.symbol_status ss ON src.symbol = ss.symbol
+                    WHERE e.{timestamp_column}::date = %s
+                      AND ss.is_active = TRUE
+                      AND ss.manually_deactivated = FALSE
+                      AND {exchange_condition}
+                    GROUP BY src.symbol
+                ) updated_symbols ON stmt.symbol = updated_symbols.symbol
+                WHERE stmt.filing_date = updated_symbols.latest_filing_date
+            """
+
+            cursor.execute(query, (reference_date.date(),))
+            count = cursor.fetchone()[0]
+
+            cursor.close()
+            conn.close()
+
+            logger.debug(f"{statement_type} statements 実取得件数 ({market}市場): {count}")
+            return count
+
+        except Exception as e:
+            logger.error(f"決算情報の実取得件数の取得に失敗しました ({statement_type}): {e}")
+            return 0
+
     def get_ttm_calculated_count(self, market: str, statement_type: str, reference_date: datetime = None) -> int:
         """
         TTM決算情報の実際の取得件数を取得
@@ -325,7 +402,7 @@ class DatabaseChecker:
             conn = get_db_connection()
             cursor = conn.cursor()
 
-            # TTMテーブルの特別処理（実際の件数は専用関数で取得）
+            # TTMテーブルまたは決算情報テーブルの特別処理（実際の件数は専用関数で取得）
             if is_ttm_statement:
                 # テーブル名から決算情報の種類を判定
                 statement_type = self._get_statement_type_from_table(table, is_ttm=True)
@@ -333,6 +410,20 @@ class DatabaseChecker:
                 if statement_type:
                     # TTM計算が完了した銘柄数を取得（専用のカウント関数を使用）
                     actual_count = self.get_ttm_calculated_count(
+                        market=market,
+                        statement_type=statement_type,
+                        reference_date=reference_date
+                    )
+                    result.actual_count = actual_count
+                else:
+                    result.actual_count = 0
+            elif is_earnings_statement:
+                # 決算情報テーブルの実際の件数を取得（専用関数を使用）
+                statement_type = self._get_statement_type_from_table(table, is_ttm=False)
+
+                if statement_type:
+                    # 最新filing_dateのレコードが存在する銘柄数を取得
+                    actual_count = self.get_statements_actual_count(
                         market=market,
                         statement_type=statement_type,
                         reference_date=reference_date
