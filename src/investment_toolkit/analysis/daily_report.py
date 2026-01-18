@@ -16,7 +16,7 @@
 import os
 import sys
 import pandas as pd
-import numpy as npk
+import numpy as np
 from datetime import datetime, timedelta
 
 
@@ -36,8 +36,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # プロジェクトのルートディレクトリをPythonのパスに追加
+# daily_report.py は src/investment_toolkit/analysis/ にあるので、
+# parent.parent.parent で src/ に到達する
 project_root = Path(__file__).resolve().parent.parent.parent.parent
-sys.path.insert(0, str(project_root))
+src_dir = project_root / "src"
+sys.path.insert(0, str(src_dir))
 
 # プロジェクト内のモジュールをインポート（エラーハンドリング付き）
 try:
