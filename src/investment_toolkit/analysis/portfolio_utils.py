@@ -1,11 +1,11 @@
 """
-ポートフォリオ（保有株）の情報を JSON から読み込み、
+ポートフォリオ（保有株）の情報を PostgreSQL (user_data.trade_journal) から読み込み、
 最新終値と突き合わせて損益を計算し、図表を返すユーティリティ
 ―― 売却フラグ / 複数ロット対応版
 """
 
 from pathlib import Path
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 from io import StringIO
 from datetime import timedelta, datetime
 import os
@@ -14,22 +14,22 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from sqlalchemy.engine import Engine
-from sqlalchemy import text
+from sqlalchemy import create_engine, text
 
 # Load environment variables
 from dotenv import load_dotenv
 load_dotenv()
 
+# DB接続設定をインポート
+from investment_toolkit.utilities.config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+
 # --------------------------------------------------------------------------
 # 設定
 # --------------------------------------------------------------------------
-# 環境変数でポートフォリオファイルのパスを指定可能
-# 指定がない場合は、カレントディレクトリからの相対パスを使用
-if "PORTFOLIO_JSON_PATH" in os.environ:
-    PORTFOLIO_JSON = Path(os.environ["PORTFOLIO_JSON_PATH"])
-else:
-    # デフォルト: ./config/portfolio.json
-    PORTFOLIO_JSON = Path("./config/portfolio.json").resolve()
+def _get_engine() -> Engine:
+    """SQLAlchemy Engineを取得"""
+    connection_string = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    return create_engine(connection_string, pool_pre_ping=True)
 
 
 # --------------------------------------------------------------------------
@@ -123,16 +123,48 @@ def calculate_weighted_annualized_return(df_lots):
 # --------------------------------------------------------------------------
 # 1. 取引データのロード
 # --------------------------------------------------------------------------
-def load_transactions(json_path: Path = PORTFOLIO_JSON) -> pd.DataFrame:
+def load_transactions(engine: Optional[Engine] = None) -> pd.DataFrame:
     """
-    portfolio.json（フラット配列）を DataFrame へ。
-    ・"sold": false だけを抽出（保有中ロット）
+    PostgreSQL (user_data.trade_journal) から保有中ロットを取得
+    ・sell_date IS NULL（未売却）のロットだけを抽出
     ・通貨列（.T は JPY、それ以外は USD）を付与
+
+    Parameters:
+    -----------
+    engine : Engine, optional
+        SQLAlchemy Engine。Noneの場合は内部で作成
+
+    Returns:
+    --------
+    pd.DataFrame
+        保有中ロットのデータフレーム
     """
-    df = pd.read_json(json_path)
-    if "sold" not in df.columns:
-        df["sold"] = False
-    df = df.query("sold == False").copy()
+    if engine is None:
+        engine = _get_engine()
+
+    query = text("""
+        SELECT
+            symbol,
+            buy_date as date,
+            buy_price as price,
+            qty,
+            buy_reason_text as reason,
+            CASE WHEN sell_date IS NOT NULL THEN true ELSE false END as sold,
+            sell_date as sold_date,
+            sell_price as sold_price,
+            sell_reason_text as sold_reason
+        FROM user_data.trade_journal
+        WHERE sell_date IS NULL
+        ORDER BY symbol, buy_date
+    """)
+
+    df = pd.read_sql_query(query, engine)
+
+    if df.empty:
+        # 空のDataFrameに必要なカラムを追加
+        df = pd.DataFrame(columns=['symbol', 'date', 'price', 'qty', 'reason',
+                                   'sold', 'sold_date', 'sold_price', 'sold_reason', 'currency'])
+        return df
 
     df["date"] = pd.to_datetime(df["date"])
     df["currency"] = df["symbol"].apply(
@@ -141,15 +173,47 @@ def load_transactions(json_path: Path = PORTFOLIO_JSON) -> pd.DataFrame:
     return df
 
 
-def load_all_transactions(json_path: Path = PORTFOLIO_JSON) -> pd.DataFrame:
+def load_all_transactions(engine: Optional[Engine] = None) -> pd.DataFrame:
     """
-    portfolio.json（フラット配列）を DataFrame へ。
+    PostgreSQL (user_data.trade_journal) から全ロットを取得
     ・全ロット（保有中・売却済み）を返す
     ・通貨列（.T は JPY、それ以外は USD）を付与
+
+    Parameters:
+    -----------
+    engine : Engine, optional
+        SQLAlchemy Engine。Noneの場合は内部で作成
+
+    Returns:
+    --------
+    pd.DataFrame
+        全ロットのデータフレーム
     """
-    df = pd.read_json(json_path)
-    if "sold" not in df.columns:
-        df["sold"] = False
+    if engine is None:
+        engine = _get_engine()
+
+    query = text("""
+        SELECT
+            symbol,
+            buy_date as date,
+            buy_price as price,
+            qty,
+            buy_reason_text as reason,
+            CASE WHEN sell_date IS NOT NULL THEN true ELSE false END as sold,
+            sell_date as sold_date,
+            sell_price as sold_price,
+            sell_reason_text as sold_reason
+        FROM user_data.trade_journal
+        ORDER BY symbol, buy_date
+    """)
+
+    df = pd.read_sql_query(query, engine)
+
+    if df.empty:
+        df = pd.DataFrame(columns=['symbol', 'date', 'price', 'qty', 'reason',
+                                   'sold', 'sold_date', 'sold_price', 'sold_reason', 'currency'])
+        return df
+
     df["date"] = pd.to_datetime(df["date"])
     df["currency"] = df["symbol"].apply(lambda x: "JPY" if x.endswith(".T") else "USD")
     return df
@@ -805,7 +869,7 @@ def build_alltime_portfolio_section(engine: Engine) -> str:
     """
     import plotly.graph_objects as go
     import html
-    df = load_all_transactions()
+    df = load_all_transactions(engine)
     # 保有中
     holding_df = df[df["sold"] == False].copy()
     if not holding_df.empty:
@@ -1024,7 +1088,7 @@ def build_portfolio_section(engine: Engine) -> Tuple[str, List[go.Figure]]:
         0: 損益バー、1: テクニカルチャート群、2〜: 通貨ごとのロット別含み損益
     """
     # 取引データ読み込み
-    df_tx = load_transactions()
+    df_tx = load_transactions(engine)
     
     # ポジション集計
     df_pos = make_current_positions(df_tx)

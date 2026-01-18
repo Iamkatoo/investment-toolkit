@@ -1094,44 +1094,7 @@ def get_portfolio_symbols(engine: Engine) -> List[str]:
             
     except Exception as e:
         print(f"取引記録からの銘柄取得に失敗: {e}")
-        print("フォールバック: JSONファイルから取得を試行します。")
-        return _get_portfolio_symbols_from_json(engine)
-
-
-def _get_portfolio_symbols_from_json(engine: Engine) -> List[str]:
-    """
-    JSONファイルからポートフォリオ銘柄を取得（フォールバック用）
-    """
-    # 環境変数でポートフォリオファイルのパスを指定可能
-    if "PORTFOLIO_JSON_PATH" in os.environ:
-        portfolio_path = Path(os.environ["PORTFOLIO_JSON_PATH"])
-    else:
-        # デフォルト: ./config/portfolio.json
-        portfolio_path = Path("./config/portfolio.json").resolve()
-
-    try:
-        if portfolio_path.exists():
-            print(f"フォールバック: ポートフォリオファイルを読み込みます: {portfolio_path}")
-            with open(portfolio_path, 'r', encoding='utf-8') as f:
-                portfolio_data = json.load(f)
-            
-            # 現在保有中の銘柄のみを抽出
-            active_symbols = []
-            for item in portfolio_data:
-                if item.get('sold', True) == False:  # soldがFalseの場合のみ
-                    symbol = item.get('symbol')
-                    if symbol and symbol not in active_symbols:
-                        active_symbols.append(symbol)
-            
-            if active_symbols:
-                print(f"JSONから保有銘柄を取得: {', '.join(active_symbols)}")
-                return active_symbols
-                
-        print("JSONからの取得も失敗。代替のサンプル銘柄を使用します。")
-        return _get_default_symbols(engine)
-        
-    except Exception as e:
-        print(f"JSONファイルからの取得に失敗: {e}")
+        print("フォールバック: デフォルトのサンプル銘柄を使用します。")
         return _get_default_symbols(engine)
 
 
