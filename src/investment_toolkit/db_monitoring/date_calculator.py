@@ -7,12 +7,12 @@
 市場別・頻度別に期待される日付を計算する
 - 米国株: 前日の日付でチェック(早朝実行のため)
 - 日本株: 当日の日付でチェック(夕方実行のため)
-- 週次: 最新の週末日付
+- 週次: week_start_date用は直近完了週の月曜日、trade_date用は直近の金曜日
 - 月次: 最新の月末日付
 """
 
 from datetime import datetime, timedelta
-from typing import Literal
+from typing import Literal, Optional
 
 
 class DateCalculator:
@@ -22,7 +22,8 @@ class DateCalculator:
     def get_expected_date(
         market: Literal["us", "jp"],
         frequency: Literal["daily", "weekly", "monthly"],
-        reference_date: datetime = None
+        reference_date: datetime = None,
+        date_column: Optional[str] = None
     ) -> str:
         """
         期待される日付を計算して返す
@@ -31,6 +32,7 @@ class DateCalculator:
             market: 市場 ("us" or "jp")
             frequency: 更新頻度 ("daily", "weekly", "monthly")
             reference_date: 基準日付 (Noneの場合は現在日時)
+            date_column: 日付カラム名 (週次の場合に使用。week_start_dateなら月曜、trade_dateなら金曜)
 
         Returns:
             期待される日付 (YYYY-MM-DD形式)
@@ -41,7 +43,7 @@ class DateCalculator:
         if frequency == "daily":
             return DateCalculator._get_daily_date(market, reference_date)
         elif frequency == "weekly":
-            return DateCalculator._get_weekly_date(reference_date)
+            return DateCalculator._get_weekly_date(reference_date, date_column)
         elif frequency == "monthly":
             return DateCalculator._get_monthly_date(reference_date)
         else:
@@ -71,28 +73,64 @@ class DateCalculator:
         return expected_date.strftime("%Y-%m-%d")
 
     @staticmethod
-    def _get_weekly_date(reference_date: datetime) -> str:
+    def _get_weekly_date(reference_date: datetime, date_column: Optional[str] = None) -> str:
         """
-        週次データの期待日付を取得 (直近の金曜日または土曜日)
+        週次データの期待日付を取得
+
+        date_columnに応じて返す日付が異なる:
+        - week_start_date: 直近の完了した週の月曜日
+        - trade_date: 直近の金曜日（週の最終取引日）
+
+        Args:
+            reference_date: 基準日付
+            date_column: 日付カラム名
+
+        Returns:
+            期待される日付 (YYYY-MM-DD形式)
+        """
+        weekday = reference_date.weekday()  # 0=月曜, 4=金曜, 5=土曜, 6=日曜
+
+        # trade_dateカラムの場合は金曜日（週の最終取引日）を返す
+        if date_column == "trade_date":
+            return DateCalculator._get_weekly_trade_date(reference_date)
+
+        # week_start_dateまたはデフォルト: 直近完了週の月曜日を返す
+        # 週次バッチは土曜日に実行されるため、その週の月曜日を期待
+        # 例: 土曜1/25実行 → その週の月曜1/20を期待
+        if weekday == 6:  # 日曜日
+            # 前週の月曜日
+            expected_date = reference_date - timedelta(days=6)
+        else:  # 月〜土曜日
+            # 今週の月曜日
+            expected_date = reference_date - timedelta(days=weekday)
+
+        return expected_date.strftime("%Y-%m-%d")
+
+    @staticmethod
+    def _get_weekly_trade_date(reference_date: datetime) -> str:
+        """
+        週次データの取引日（金曜日）を取得
+
+        industry_weekly_prices, sector_weekly_prices など
+        trade_dateカラムを使用するテーブル向け
 
         Args:
             reference_date: 基準日付
 
         Returns:
-            期待される日付 (YYYY-MM-DD形式)
+            期待される日付 (YYYY-MM-DD形式) - 直近の金曜日
         """
-        # 曜日を取得 (0=月曜, 4=金曜, 5=土曜, 6=日曜)
-        weekday = reference_date.weekday()
+        weekday = reference_date.weekday()  # 0=月曜, 4=金曜, 5=土曜, 6=日曜
 
-        # 直近の週末(金曜または土曜)を計算
         if weekday == 4:  # 金曜日
             expected_date = reference_date
         elif weekday == 5:  # 土曜日
-            expected_date = reference_date
+            expected_date = reference_date - timedelta(days=1)  # 前日の金曜
         elif weekday == 6:  # 日曜日
-            expected_date = reference_date - timedelta(days=1)  # 前日の土曜
+            expected_date = reference_date - timedelta(days=2)  # 前々日の金曜
         else:  # 月〜木曜日
-            expected_date = reference_date - timedelta(days=weekday + 3)  # 前週の金曜
+            # 前週の金曜日
+            expected_date = reference_date - timedelta(days=weekday + 3)
 
         return expected_date.strftime("%Y-%m-%d")
 

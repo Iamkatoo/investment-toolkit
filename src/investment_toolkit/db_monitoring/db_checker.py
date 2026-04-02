@@ -120,6 +120,35 @@ class DatabaseChecker:
             logger.error(f"アクティブ銘柄数の取得に失敗しました: {e}")
             return 0
 
+    def _get_dependency_base_count(
+        self,
+        depends_on: List[str],
+        dependency_actual_counts: Dict[str, int],
+        is_double_count: bool = False
+    ) -> int:
+        """
+        依存先テーブルの実績件数から基準となる件数を取得
+
+        複数の依存先がある場合は、最初に見つかった依存先の件数を使用する。
+        通常は fmp_data.daily_prices が最も基本的な依存先となる。
+
+        Args:
+            depends_on: 依存先テーブルのリスト (例: ["fmp_data.daily_prices"])
+            dependency_actual_counts: 各テーブルの実績件数辞書
+            is_double_count: 母数を2倍にするかどうか
+
+        Returns:
+            基準となる件数（依存先の実績件数）
+        """
+        for dep_table in depends_on:
+            if dep_table in dependency_actual_counts:
+                count = dependency_actual_counts[dep_table]
+                if is_double_count:
+                    count *= 2
+                logger.debug(f"依存先 {dep_table} の実績件数を使用: {count}")
+                return count
+        return 0
+
     def get_earnings_processed_count(self, market: str, statement_type: str, reference_date: datetime = None) -> int:
         """
         決算情報の期待件数を取得（本日処理された銘柄数）
@@ -349,7 +378,8 @@ class DatabaseChecker:
         table: str,
         config: Dict,
         market: str,
-        reference_date: datetime = None
+        reference_date: datetime = None,
+        dependency_actual_counts: Optional[Dict[str, int]] = None
     ) -> TableCheckResult:
         """
         テーブルをチェック
@@ -360,6 +390,7 @@ class DatabaseChecker:
             config: テーブル設定
             market: 市場
             reference_date: 基準日付
+            dependency_actual_counts: 依存先テーブルの実績件数辞書
 
         Returns:
             TableCheckResult
@@ -375,6 +406,7 @@ class DatabaseChecker:
         require_tuesday_check = config.get("require_tuesday_check", False)
         is_double_count = config.get("is_double_count", False)
         use_current_date = config.get("use_current_date", False)
+        depends_on = config.get("depends_on", [])
 
         # 期待される日付を計算
         if use_current_date:
@@ -382,10 +414,13 @@ class DatabaseChecker:
             expected_date = (reference_date or datetime.now()).strftime("%Y-%m-%d")
         else:
             # 通常の市場別・頻度別の日付計算
+            # 週次の場合はdate_columnに応じて期待日付が異なる
+            # (week_start_date: 月曜日, trade_date: 金曜日)
             expected_date = self.date_calculator.get_expected_date(
                 market=market,
                 frequency=frequency,
-                reference_date=reference_date
+                reference_date=reference_date,
+                date_column=date_column
             )
 
         result = TableCheckResult(
@@ -498,8 +533,28 @@ class DatabaseChecker:
                 if expected_min_rows:
                     # 固定の最低件数が設定されている場合
                     result.expected_count = expected_min_rows
+                elif depends_on and dependency_actual_counts:
+                    # 依存先テーブルがある場合、依存先の実績件数を分母として使用
+                    # これにより、daily_pricesが3700件なら、依存テーブルも3700件が期待値になる
+                    dependency_count = self._get_dependency_base_count(
+                        depends_on, dependency_actual_counts, is_double_count
+                    )
+                    if dependency_count > 0:
+                        result.active_symbols_count = dependency_count
+                        # 依存先ベースの場合、閾値ではなく依存先の件数をそのまま期待値とする
+                        # （依存先と同じ件数が期待される）
+                        result.expected_count = dependency_count
+                        result.uses_dependency_base = True
+                    else:
+                        # 依存先の実績がない場合はアクティブ銘柄数ベースにフォールバック
+                        active_count = self.get_active_symbols_count(market)
+                        if is_double_count:
+                            result.active_symbols_count = active_count * 2
+                        else:
+                            result.active_symbols_count = active_count
+                        result.expected_count = int(result.active_symbols_count * (threshold_pct / 100.0)) if threshold_pct else None
                 elif threshold_pct:
-                    # アクティブ銘柄数ベースの場合
+                    # アクティブ銘柄数ベースの場合（依存先なし）
                     active_count = self.get_active_symbols_count(market)
 
                     # is_double_countフラグがある場合は母数を2倍にする
@@ -558,8 +613,22 @@ class DatabaseChecker:
                     coverage = (actual_count / result.expected_count) * 100
                     result.status = "error"
                     result.message = f"{description}: 取得率大幅低下 ({actual_count}/{result.expected_count}件, {coverage:.1f}%)"
+            elif result.uses_dependency_base and result.expected_count:
+                # 依存先ベースの判定ロジック
+                # 依存先（daily_prices等）の実績件数と同程度であればOK
+                # 依存先が3700件なら、このテーブルも3700件程度あればOK
+                coverage = (actual_count / result.expected_count) * 100
+                if coverage >= 95:  # 依存先の95%以上あればOK
+                    result.status = "ok"
+                    result.message = f"{description}: データ正常 ({actual_count}/{result.expected_count}件, {coverage:.1f}%)"
+                elif coverage >= 80:  # 80%以上95%未満はwarning
+                    result.status = "warning"
+                    result.message = f"{description}: データやや不足 ({actual_count}/{result.expected_count}件, {coverage:.1f}%)"
+                else:
+                    result.status = "error"
+                    result.message = f"{description}: データ不足 ({actual_count}/{result.expected_count}件, {coverage:.1f}%)"
             elif result.expected_count:
-                # 通常のテーブルの判定ロジック
+                # 通常のテーブルの判定ロジック（アクティブ銘柄数ベース）
                 if actual_count >= result.expected_count:
                     result.status = "ok"
                     result.message = f"{description}: データ正常 ({actual_count}件)"
@@ -635,7 +704,12 @@ class DatabaseChecker:
             execution_time=reference_date.strftime("%Y-%m-%d %H:%M:%S"),
         )
 
-        # 設定からテーブルを抽出してチェック
+        # 依存先テーブルの実績件数を保持する辞書
+        # キー: "schema.table" 形式、値: actual_count
+        dependency_actual_counts: Dict[str, int] = {}
+
+        # 対象テーブルをリストアップ（依存先を先に処理するため順序を調整）
+        tables_to_check = []
         for schema, tables in self.config.items():
             for table_name, table_config in tables.items():
                 # 頻度が一致しないテーブルはスキップ
@@ -647,16 +721,39 @@ class DatabaseChecker:
                 if market not in table_markets:
                     continue
 
-                # テーブルチェック実行
-                logger.info(f"チェック中: {schema}.{table_name} (market={market}, freq={frequency})")
-                table_result = self.check_table(
-                    schema=schema,
-                    table=table_name,
-                    config=table_config,
-                    market=market,
-                    reference_date=reference_date
-                )
-                result.add_table_result(table_result)
+                tables_to_check.append({
+                    "schema": schema,
+                    "table": table_name,
+                    "config": table_config,
+                    "depends_on": table_config.get("depends_on", [])
+                })
+
+        # 依存関係に基づいてソート（依存先がないテーブルを先に処理）
+        # fmp_data.daily_prices のような基盤テーブルが先に処理される
+        tables_to_check.sort(key=lambda x: len(x["depends_on"]))
+
+        # 設定からテーブルを抽出してチェック
+        for table_info in tables_to_check:
+            schema = table_info["schema"]
+            table_name = table_info["table"]
+            table_config = table_info["config"]
+            depends_on = table_info["depends_on"]
+
+            # テーブルチェック実行
+            logger.info(f"チェック中: {schema}.{table_name} (market={market}, freq={frequency})")
+            table_result = self.check_table(
+                schema=schema,
+                table=table_name,
+                config=table_config,
+                market=market,
+                reference_date=reference_date,
+                dependency_actual_counts=dependency_actual_counts
+            )
+            result.add_table_result(table_result)
+
+            # このテーブルの実績件数を記録（他テーブルの依存先として使用される可能性）
+            full_table_name = f"{schema}.{table_name}"
+            dependency_actual_counts[full_table_name] = table_result.actual_count
 
         # サマリー生成
         result.generate_summary()

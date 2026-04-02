@@ -25,6 +25,7 @@ class TableCheckResult:
     status: str = "unknown"  # "ok", "warning", "error"
     message: str = ""
     details: Dict = field(default_factory=dict)
+    uses_dependency_base: bool = False  # 依存先の実績件数を期待値として使用しているか
 
     @property
     def full_table_name(self) -> str:
@@ -59,6 +60,7 @@ class TableCheckResult:
             "status": self.status,
             "message": self.message,
             "details": self.details,
+            "uses_dependency_base": self.uses_dependency_base,
         }
 
 
