@@ -334,6 +334,47 @@ def _fetch_market_ranking_data(engine, market: str, rank_date: str) -> pd.DataFr
         return pd.read_sql(query, conn, params={'market': market, 'rank_date': rank_date})
 
 
+def _fetch_current_prices_and_sparklines(engine, symbols: list) -> tuple:
+    """
+    指定シンボルの最新株価と過去1ヶ月のスパークラインデータを取得
+
+    Returns
+    -------
+    price_data : dict  {symbol: latest_close}
+    sparkline_prices : dict  {symbol: [close, ...]} (古い順)
+    """
+    if not symbols:
+        return {}, {}
+
+    since = (datetime.now() - timedelta(days=35)).strftime('%Y-%m-%d')
+    placeholders = ', '.join([f':sym_{i}' for i in range(len(symbols))])
+    params = {f'sym_{i}': s for i, s in enumerate(symbols)}
+    params['since'] = since
+
+    query = text(f"""
+        SELECT symbol, date, close
+        FROM fmp_data.daily_prices
+        WHERE symbol IN ({placeholders})
+          AND date >= :since
+          AND close IS NOT NULL
+        ORDER BY symbol, date
+    """)
+
+    with engine.connect() as conn:
+        df = pd.read_sql(query, conn, params=params)
+
+    price_data = {}
+    sparkline_prices = {}
+    for sym, grp in df.groupby('symbol'):
+        grp = grp.sort_values('date')
+        closes = grp['close'].tolist()
+        sparkline_prices[sym] = closes
+        if closes:
+            price_data[sym] = closes[-1]
+
+    return price_data, sparkline_prices
+
+
 def fetch_daily_top10_rankings(engine, rank_date=None):
     """
     backtest_results.score_rankings_v2 から日次トップ10ランキングを取得（日米統合）
@@ -417,10 +458,16 @@ def fetch_daily_top10_rankings(engine, rank_date=None):
         axis=1
     )
 
+    # 現在株価とスパークラインデータ（過去1ヶ月の日足）を取得
+    symbols = df_combined['symbol'].tolist()
+    price_data, sparkline_prices = _fetch_current_prices_and_sparklines(engine, symbols)
+    df_combined['current_price'] = df_combined['symbol'].map(price_data)
+
     return {
         'combined': df_combined,
         'jp_date': jp_date,
-        'us_date': us_date
+        'us_date': us_date,
+        'sparkline_prices': sparkline_prices,
     }
 
 
@@ -1293,7 +1340,7 @@ def generate_reports(engine, df_merged, df_scored, df_scored_long, *, offline: b
     <title>スコアリング品質チェック - {current_date}</title>
     <style>
         body {{ font-family: system-ui, sans-serif; margin: 0; padding: 20px; background-color: #f8f9fa; line-height: 1.6; }}
-        .container {{ max-width: 1200px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }}
+        .container {{ max-width: 1800px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }}
         .metric-card {{ background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin: 10px; text-align: center; }}
         .metric-card h4 {{ margin: 0 0 10px 0; color: #495057; font-size: 0.9rem; font-weight: 600; }}
         .metric-value {{ display: block; font-size: 1.5rem; font-weight: bold; margin: 5px 0; }}
@@ -1527,7 +1574,7 @@ def create_dashboard_html():
     <title>Economic Dashboard</title>
     <style>
         body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; }}
-        .dashboard {{ max-width: 1200px; margin: 0 auto; }}
+        .dashboard {{ max-width: 1800px; margin: 0 auto; }}
         
         /* ヘッダー部分のレイアウト */
         .header {{

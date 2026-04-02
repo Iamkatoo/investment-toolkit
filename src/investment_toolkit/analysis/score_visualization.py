@@ -2294,6 +2294,7 @@ def generate_market_score_html(df_macro: pd.DataFrame, macro_components: Dict, d
             df_combined = ranking_data['combined']
             jp_date = ranking_data['jp_date']
             us_date = ranking_data['us_date']
+            sparkline_prices = ranking_data.get('sparkline_prices', {})
 
             print(f"  📊 取得件数: {len(df_combined)}件")
             print(f"  📊 カラム: {df_combined.columns.tolist()}")
@@ -2306,6 +2307,27 @@ def generate_market_score_html(df_macro: pd.DataFrame, macro_components: Dict, d
 
             if not df_combined.empty:
                 print("  ✅ ランキングデータが存在します。HTML生成開始...")
+                def _make_sparkline_svg(closes, width=100, height=28):
+                    """closes リストからインラインSVGスパークラインを生成"""
+                    if not closes or len(closes) < 2:
+                        return '<svg width="{}" height="{}"></svg>'.format(width, height)
+                    mn, mx = min(closes), max(closes)
+                    rng = mx - mn if mx != mn else 1
+                    pad = 2
+                    pts = []
+                    n = len(closes)
+                    for i, v in enumerate(closes):
+                        x = pad + (i / (n - 1)) * (width - 2 * pad)
+                        y = pad + (1 - (v - mn) / rng) * (height - 2 * pad)
+                        pts.append(f"{x:.1f},{y:.1f}")
+                    color = "#2E7D32" if closes[-1] >= closes[0] else "#c0392b"
+                    polyline = ' '.join(pts)
+                    return (
+                        f'<svg width="{width}" height="{height}" style="display:block;">'
+                        f'<polyline points="{polyline}" fill="none" stroke="{color}" stroke-width="1.5" stroke-linejoin="round"/>'
+                        f'</svg>'
+                    )
+
                 rows_html = ""
                 for idx, row in df_combined.iterrows():
                     rank_badge_color = "#FFD700" if row['rank'] == 1 else "#C0C0C0" if row['rank'] == 2 else "#CD7F32" if row['rank'] == 3 else "#E8F5E9"
@@ -2315,6 +2337,17 @@ def generate_market_score_html(df_macro: pd.DataFrame, macro_components: Dict, d
                     sector = row.get('sector', 'N/A')
                     row_class = "even-row" if idx % 2 == 1 else ""
 
+                    # 現在株価
+                    current_price = row.get('current_price')
+                    if current_price is not None and not (isinstance(current_price, float) and current_price != current_price):
+                        price_str = f"{current_price:,.2f}"
+                    else:
+                        price_str = "—"
+
+                    # スパークライン（過去1ヶ月日足）
+                    closes = sparkline_prices.get(row['symbol'], [])
+                    sparkline_svg = _make_sparkline_svg(closes)
+
                     rows_html += f"""
                     <tr class="ranking-row {row_class}">
                         <td style="background-color: {rank_badge_color}; font-weight: bold; text-align: center;">{row['rank']}</td>
@@ -2323,7 +2356,8 @@ def generate_market_score_html(df_macro: pd.DataFrame, macro_components: Dict, d
                         <td style="text-align: center; font-size: 1.2rem;">{market_flag}</td>
                         <td style="text-align: right; font-weight: 600; color: #2E7D32;">{row['score']:.2f}</td>
                         <td style="text-align: center; color: #666;">{sector}</td>
-                        <td style="text-align: right; color: #666;">{row['universe_size']:,}</td>
+                        <td style="text-align: right; font-family: monospace; color: #2c3e50;">{price_str}</td>
+                        <td style="padding: 4px 8px; vertical-align: middle;">{sparkline_svg}</td>
                         <td style="text-align: center; font-weight: 600; color: #1976D2;">{top10_count}回</td>
                         <td style="text-align: center; padding: 8px;">
                             <button class="detailed-report-btn" onclick="generateDetailedReport('{row['symbol']}')">
@@ -2406,7 +2440,8 @@ def generate_market_score_html(df_macro: pd.DataFrame, macro_components: Dict, d
                                 <th style="text-align: center;">市場</th>
                                 <th style="text-align: right;">スコア</th>
                                 <th style="text-align: center;">セクター</th>
-                                <th style="text-align: right;">母集団</th>
+                                <th style="text-align: right;">現在株価</th>
+                                <th style="text-align: center;">推移(1ヶ月)</th>
                                 <th style="text-align: center;">Top10入り</th>
                                 <th style="text-align: center;">詳細分析</th>
                             </tr>
@@ -2451,7 +2486,7 @@ def generate_market_score_html(df_macro: pd.DataFrame, macro_components: Dict, d
             background-color: #f5f5f5;
         }}
         .container {{
-            max-width: 1200px;
+            max-width: 1800px;
             margin: 0 auto;
             background-color: white;
             padding: 20px;
