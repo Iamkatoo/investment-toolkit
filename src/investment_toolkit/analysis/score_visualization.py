@@ -2012,8 +2012,11 @@ def generate_market_score_html(df_macro: pd.DataFrame, macro_components: Dict, d
                 sma40s = data.get('sma40', [])
                 trade_data = data.get('trade_data', [])
                 
-                # JavaScript変数名に使用する安全なシンボル名を生成（ピリオドを_に置換）
-                js_symbol = symbol.replace('.', '_')
+                # JavaScript変数名に使用する安全なシンボル名を生成
+                # ASCII英数字とアンダースコア以外（ピリオド・空白・スラッシュ・全角文字など）を
+                # すべて _ に置換し、不正な symbol が混入しても JS 構文が壊れないようにする。
+                # re.ASCII 指定により全角文字も \W 扱いとなり確実に除去される。
+                js_symbol = re.sub(r'\W', '_', symbol, flags=re.ASCII)
                 
                 # ローソク足チャートスクリプトを生成
                 chart_scripts += f"""

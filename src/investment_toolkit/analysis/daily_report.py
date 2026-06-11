@@ -862,50 +862,59 @@ def generate_reports(engine, df_merged, df_scored, df_scored_long, *, offline: b
     os.makedirs(REPORT_DIR, exist_ok=True)
     os.makedirs(GRAPHS_DIR, exist_ok=True)
     
-    # iCloudディレクトリも作成
-    os.makedirs(ICLOUD_REPORT_DIR, exist_ok=True)
-    os.makedirs(ICLOUD_GRAPHS_DIR, exist_ok=True)
+    # iCloudディレクトリも作成（有効な場合のみ）
+    if ICLOUD_REPORT_DIR is not None:
+        os.makedirs(ICLOUD_REPORT_DIR, exist_ok=True)
+    if ICLOUD_GRAPHS_DIR is not None:
+        os.makedirs(ICLOUD_GRAPHS_DIR, exist_ok=True)
 
     # 1. 株価指数推移(正規化)
     fig_indices, exp_indices = plot_normalized_indices(df_merged)
     html_content = build_html(fig_indices, exp_indices)
     (GRAPHS_DIR / "normalized_indices.html").write_text(html_content, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "normalized_indices.html").write_text(html_content, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "normalized_indices.html").write_text(html_content, encoding="utf-8")
     
     # 1‑b. 株価指数 (直近 6 W)
     fig_idx_6w, exp_idx_6w = plot_normalized_indices_6w(df_merged)
     html_content = build_html(fig_idx_6w, exp_idx_6w)
     (GRAPHS_DIR / "normalized_indices_6w.html").write_text(html_content, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "normalized_indices_6w.html").write_text(html_content, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "normalized_indices_6w.html").write_text(html_content, encoding="utf-8")
     
     # 1‑c. 株価指数 (直近 3 M)
     fig_idx_3m, exp_idx_3m = plot_normalized_indices_3m(df_merged)
     html_content = build_html(fig_idx_3m, exp_idx_3m)
     (GRAPHS_DIR / "normalized_indices_3m.html").write_text(html_content, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "normalized_indices_3m.html").write_text(html_content, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "normalized_indices_3m.html").write_text(html_content, encoding="utf-8")
     
     # 2. VIX vs S&P500(2軸)
     fig_vix_sp500, exp_vix_sp500 = plot_vix_vs_sp500(df_merged)
     html_content = build_html(fig_vix_sp500, exp_vix_sp500)
     (GRAPHS_DIR / "vix_vs_sp500.html").write_text(html_content, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "vix_vs_sp500.html").write_text(html_content, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "vix_vs_sp500.html").write_text(html_content, encoding="utf-8")
 
     # 3. 金・ドル・為替(正規化)
     fig_gold_dollar, exp_gold_dollar = plot_gold_dollar_yen(df_merged)
     html_content = build_html(fig_gold_dollar, exp_gold_dollar)
     (GRAPHS_DIR / "gold_dollar_yen.html").write_text(html_content, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "gold_dollar_yen.html").write_text(html_content, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "gold_dollar_yen.html").write_text(html_content, encoding="utf-8")
     
     # --- 金・ドル・為替 (6W / 3M) ---
     fig_gdy_6w, exp_gdy_6w = plot_gold_dollar_yen_6w(df_merged)
     html_content = build_html(fig_gdy_6w, exp_gdy_6w)
     (GRAPHS_DIR / "gold_dollar_yen_6w.html").write_text(html_content, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "gold_dollar_yen_6w.html").write_text(html_content, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "gold_dollar_yen_6w.html").write_text(html_content, encoding="utf-8")
     
     fig_gdy_3m, exp_gdy_3m = plot_gold_dollar_yen_3m(df_merged)
     html_content = build_html(fig_gdy_3m, exp_gdy_3m)
     (GRAPHS_DIR / "gold_dollar_yen_3m.html").write_text(html_content, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "gold_dollar_yen_3m.html").write_text(html_content, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "gold_dollar_yen_3m.html").write_text(html_content, encoding="utf-8")
 
     # 4. 通貨ペア(対ドル／クロス円)
     #   plot_currency_pairs の戻り値は
@@ -920,49 +929,58 @@ def generate_reports(engine, df_merged, df_scored, df_scored_long, *, offline: b
     
     html_content = build_html(fig_usd_pairs, exp_currency)
     (GRAPHS_DIR / "usd_currency_pairs.html").write_text(html_content, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "usd_currency_pairs.html").write_text(html_content, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "usd_currency_pairs.html").write_text(html_content, encoding="utf-8")
     
     html_content = build_html(fig_jpy_pairs, exp_currency)
     (GRAPHS_DIR / "jpy_currency_pairs.html").write_text(html_content, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "jpy_currency_pairs.html").write_text(html_content, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "jpy_currency_pairs.html").write_text(html_content, encoding="utf-8")
     
     # --- 通貨ペア (6W / 3M) ---
     fig_usd_6w, fig_jpy_6w, exp_cur_6w = plot_currency_pairs_6w(df_merged)
     html_content = build_html(fig_usd_6w, exp_cur_6w)
     (GRAPHS_DIR / "usd_pairs_6w.html").write_text(html_content, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "usd_pairs_6w.html").write_text(html_content, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "usd_pairs_6w.html").write_text(html_content, encoding="utf-8")
     
     html_content = build_html(fig_jpy_6w, exp_cur_6w)
     (GRAPHS_DIR / "jpy_pairs_6w.html").write_text(html_content, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "jpy_pairs_6w.html").write_text(html_content, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "jpy_pairs_6w.html").write_text(html_content, encoding="utf-8")
     
     fig_usd_3m, fig_jpy_3m, exp_cur_3m = plot_currency_pairs_3m(df_merged)
     html_content = build_html(fig_usd_3m, exp_cur_3m)
     (GRAPHS_DIR / "usd_pairs_3m.html").write_text(html_content, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "usd_pairs_3m.html").write_text(html_content, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "usd_pairs_3m.html").write_text(html_content, encoding="utf-8")
     
     html_content = build_html(fig_jpy_3m, exp_cur_3m)
     (GRAPHS_DIR / "jpy_pairs_3m.html").write_text(html_content, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "jpy_pairs_3m.html").write_text(html_content, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "jpy_pairs_3m.html").write_text(html_content, encoding="utf-8")
     
     # 5. 金利推移
     fig_interest, exp_interest = plot_interest_rates(df_merged)
     html_content = build_html(fig_interest, exp_interest)
     (GRAPHS_DIR / "interest_rates.html").write_text(html_content, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "interest_rates.html").write_text(html_content, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "interest_rates.html").write_text(html_content, encoding="utf-8")
 
     # 6. インフレ指標
     fig_inflation, exp_inflation = plot_inflation(df_merged)
     html_content = build_html(fig_inflation, exp_inflation)
     (GRAPHS_DIR / "inflation.html").write_text(html_content, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "inflation.html").write_text(html_content, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "inflation.html").write_text(html_content, encoding="utf-8")
 
     # 7. 経済スコア
     print("DEBUG: About to generate economic score (short-term)...")
     fig_score, exp_score = plot_economic_score(df_scored)
     html_content = build_html(fig_score, exp_score)
     (GRAPHS_DIR / "economic_score.html").write_text(html_content, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "economic_score.html").write_text(html_content, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "economic_score.html").write_text(html_content, encoding="utf-8")
     print("DEBUG: Economic score (short-term) completed!")
     
     # 7‑b. 経済スコア (長期 12M カナリア式)
@@ -970,7 +988,8 @@ def generate_reports(engine, df_merged, df_scored, df_scored_long, *, offline: b
     fig_score_long, exp_score_long = plot_economic_score(df_scored_long)
     html_content = build_html(fig_score_long, "【12M カナリア式】<br>" + exp_score_long)
     (GRAPHS_DIR / "economic_score_long.html").write_text(html_content, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "economic_score_long.html").write_text(html_content, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "economic_score_long.html").write_text(html_content, encoding="utf-8")
     print("DEBUG: Economic score (long-term) completed!")
 
     # 8. 経済指標サブプロット
@@ -979,7 +998,8 @@ def generate_reports(engine, df_merged, df_scored, df_scored_long, *, offline: b
         fig_subplots, exp_subplots = plot_economic_subplots(df_merged)
         html_content = build_html(fig_subplots, exp_subplots)
         (GRAPHS_DIR / "economic_subplots.html").write_text(html_content, encoding="utf-8")
-        (ICLOUD_GRAPHS_DIR / "economic_subplots.html").write_text(html_content, encoding="utf-8")
+        if ICLOUD_GRAPHS_DIR is not None:
+            (ICLOUD_GRAPHS_DIR / "economic_subplots.html").write_text(html_content, encoding="utf-8")
         print("DEBUG: Economic subplots completed!")
     except Exception as e:
         print(f"ERROR: Economic subplots failed: {e}")
@@ -1074,7 +1094,8 @@ def generate_reports(engine, df_merged, df_scored, df_scored_long, *, offline: b
         raise RuntimeError("[MACRO] failed to inject snapshot json")
     
     (GRAPHS_DIR / "market_score_report.html").write_text(html_content, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "market_score_report.html").write_text(html_content, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "market_score_report.html").write_text(html_content, encoding="utf-8")
     
     # 埋め込みJSONの存在を保証
     print("  🔍 埋め込みJSONの存在確認中...")
@@ -1209,7 +1230,8 @@ def generate_reports(engine, df_merged, df_scored, df_scored_long, *, offline: b
     
     # 作成したHTMLファイルを保存
     (GRAPHS_DIR / "portfolio_history.html").write_text(tech_html, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "portfolio_history.html").write_text(tech_html, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "portfolio_history.html").write_text(tech_html, encoding="utf-8")
     
     # ロット別含み損益グラフを保存
     # 通貨ごとに別々のdivで複数のグラフを表示するHTMLを作成
@@ -1243,24 +1265,28 @@ def generate_reports(engine, df_merged, df_scored, df_scored_long, *, offline: b
     
     # 作成したHTMLファイルを保存
     (GRAPHS_DIR / "portfolio_lot.html").write_text(lot_html, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "portfolio_lot.html").write_text(lot_html, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "portfolio_lot.html").write_text(lot_html, encoding="utf-8")
     
     # 全期間損益実績ページを保存
     alltime_html = build_alltime_portfolio_section(engine)
     (GRAPHS_DIR / "portfolio_alltime.html").write_text(alltime_html, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "portfolio_alltime.html").write_text(alltime_html, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "portfolio_alltime.html").write_text(alltime_html, encoding="utf-8")
     
     # 10. スコア上位銘柄分析レポート（新機能）
     print("スコア上位銘柄分析レポートを生成中...")
     top_stocks_html = generate_top_stocks_report(engine)
     (GRAPHS_DIR / "top_stocks_analysis.html").write_text(top_stocks_html, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "top_stocks_analysis.html").write_text(top_stocks_html, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "top_stocks_analysis.html").write_text(top_stocks_html, encoding="utf-8")
     
     # 11. RSI35以下分析レポート（新機能）
     print("RSI35以下分析レポートを生成中...")
     rsi35_html = generate_rsi35_below_report(engine)
     (GRAPHS_DIR / "rsi35_below_analysis.html").write_text(rsi35_html, encoding="utf-8")
-    (ICLOUD_GRAPHS_DIR / "rsi35_below_analysis.html").write_text(rsi35_html, encoding="utf-8")
+    if ICLOUD_GRAPHS_DIR is not None:
+        (ICLOUD_GRAPHS_DIR / "rsi35_below_analysis.html").write_text(rsi35_html, encoding="utf-8")
     
     # 12. ミニチャート用JSON生成
     print("ミニチャート用JSONを生成中...")
@@ -1287,7 +1313,8 @@ def generate_reports(engine, df_merged, df_scored, df_scored_long, *, offline: b
             print("  📈 ウォッチリストレポート生成中...")
             mini_chart_html = generate_mini_chart_watchlist_html(engine)
             (GRAPHS_DIR / "watchlist_report_mini.html").write_text(mini_chart_html, encoding="utf-8")
-            (ICLOUD_GRAPHS_DIR / "watchlist_report_mini.html").write_text(mini_chart_html, encoding="utf-8")
+            if ICLOUD_GRAPHS_DIR is not None:
+                (ICLOUD_GRAPHS_DIR / "watchlist_report_mini.html").write_text(mini_chart_html, encoding="utf-8")
             
             print("  ✅ ウォッチリストレポート生成完了")
         except Exception as e:
@@ -1296,13 +1323,15 @@ def generate_reports(engine, df_merged, df_scored, df_scored_long, *, offline: b
             from investment_toolkit.analysis.watchlist_report import generate_empty_watchlist_html
             empty_watchlist_html = generate_empty_watchlist_html()
             (GRAPHS_DIR / "watchlist_report_mini.html").write_text(empty_watchlist_html, encoding="utf-8")
-            (ICLOUD_GRAPHS_DIR / "watchlist_report_mini.html").write_text(empty_watchlist_html, encoding="utf-8")
+            if ICLOUD_GRAPHS_DIR is not None:
+                (ICLOUD_GRAPHS_DIR / "watchlist_report_mini.html").write_text(empty_watchlist_html, encoding="utf-8")
     else:
         # APIサーバー未接続時はフォールバック用レポートを生成
         print("  🔄 APIサーバー未接続のため、フォールバック用レポートを生成中...")
         fallback_html = generate_fallback_watchlist_html()
         (GRAPHS_DIR / "watchlist_report_mini.html").write_text(fallback_html, encoding="utf-8")
-        (ICLOUD_GRAPHS_DIR / "watchlist_report_mini.html").write_text(fallback_html, encoding="utf-8")
+        if ICLOUD_GRAPHS_DIR is not None:
+            (ICLOUD_GRAPHS_DIR / "watchlist_report_mini.html").write_text(fallback_html, encoding="utf-8")
         print("  ✅ フォールバック用ウォッチリストレポート生成完了")
         print("  💡 APIサーバーを起動後、レポートを再生成してください")
     
@@ -1311,7 +1340,8 @@ def generate_reports(engine, df_merged, df_scored, df_scored_long, *, offline: b
     try:
         ranking_html = generate_daily_ranking_html(engine)
         (GRAPHS_DIR / "daily_ranking_report.html").write_text(ranking_html, encoding="utf-8")
-        (ICLOUD_GRAPHS_DIR / "daily_ranking_report.html").write_text(ranking_html, encoding="utf-8")
+        if ICLOUD_GRAPHS_DIR is not None:
+            (ICLOUD_GRAPHS_DIR / "daily_ranking_report.html").write_text(ranking_html, encoding="utf-8")
         print("  ✅ 日次ランキングレポート生成完了")
     except Exception as e:
         print(f"  ⚠️ 日次ランキングレポート生成エラー: {e}")
@@ -1319,7 +1349,8 @@ def generate_reports(engine, df_merged, df_scored, df_scored_long, *, offline: b
         from investment_toolkit.analysis.daily_ranking_report import generate_empty_ranking_html
         empty_ranking_html = generate_empty_ranking_html()
         (GRAPHS_DIR / "daily_ranking_report.html").write_text(empty_ranking_html, encoding="utf-8")
-        (ICLOUD_GRAPHS_DIR / "daily_ranking_report.html").write_text(empty_ranking_html, encoding="utf-8")
+        if ICLOUD_GRAPHS_DIR is not None:
+            (ICLOUD_GRAPHS_DIR / "daily_ranking_report.html").write_text(empty_ranking_html, encoding="utf-8")
 
     # 15. スコアリング品質検証レポート（新機能）
     print("スコアリング品質検証レポートを生成中...")
@@ -1378,7 +1409,8 @@ def generate_reports(engine, df_merged, df_scored, df_scored_long, *, offline: b
 </html>"""
             
             (GRAPHS_DIR / "scoring_validation_report.html").write_text(standalone_validation_html, encoding="utf-8")
-            (ICLOUD_GRAPHS_DIR / "scoring_validation_report.html").write_text(standalone_validation_html, encoding="utf-8")
+            if ICLOUD_GRAPHS_DIR is not None:
+                (ICLOUD_GRAPHS_DIR / "scoring_validation_report.html").write_text(standalone_validation_html, encoding="utf-8")
             
             # 検証結果をログに記録
             validator.log_validation_results(daily_results)
@@ -1409,7 +1441,8 @@ def generate_reports(engine, df_merged, df_scored, df_scored_long, *, offline: b
 </body>
 </html>"""
             (GRAPHS_DIR / "scoring_validation_report.html").write_text(fallback_html, encoding="utf-8")
-            (ICLOUD_GRAPHS_DIR / "scoring_validation_report.html").write_text(fallback_html, encoding="utf-8")
+            if ICLOUD_GRAPHS_DIR is not None:
+                (ICLOUD_GRAPHS_DIR / "scoring_validation_report.html").write_text(fallback_html, encoding="utf-8")
             print("  ⚠️ スコアリング検証モジュールが利用できません")
         
     except Exception as e:
@@ -1438,7 +1471,8 @@ def generate_reports(engine, df_merged, df_scored, df_scored_long, *, offline: b
 </body>
 </html>"""
         (GRAPHS_DIR / "scoring_validation_report.html").write_text(error_html, encoding="utf-8")
-        (ICLOUD_GRAPHS_DIR / "scoring_validation_report.html").write_text(error_html, encoding="utf-8")
+        if ICLOUD_GRAPHS_DIR is not None:
+            (ICLOUD_GRAPHS_DIR / "scoring_validation_report.html").write_text(error_html, encoding="utf-8")
     
     # 16. 売買記録分析は portfolio_alltime.html と market_score_report.html に統合されました
     print("  ✅ 売買記録分析機能は他のレポートに統合済み")
@@ -1450,11 +1484,12 @@ def generate_reports(engine, df_merged, df_scored, df_scored_long, *, offline: b
     update_text = f"最終更新: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
     with open(REPORT_DIR / "last_update.txt", "w", encoding="utf-8") as f:
         f.write(update_text)
-    with open(ICLOUD_REPORT_DIR / "last_update.txt", "w", encoding="utf-8") as f:
-        f.write(update_text)
+    if ICLOUD_REPORT_DIR is not None:
+        with open(ICLOUD_REPORT_DIR / "last_update.txt", "w", encoding="utf-8") as f:
+            f.write(update_text)
 
-    print(f"レポートを {REPORT_DIR} と {ICLOUD_REPORT_DIR} に保存しました。")
-    print(f"グラフファイルは {GRAPHS_DIR} と {ICLOUD_GRAPHS_DIR} に保存しました。")
+    print(f"レポートを {REPORT_DIR}" + (f" と {ICLOUD_REPORT_DIR}" if ICLOUD_REPORT_DIR else "") + " に保存しました。")
+    print(f"グラフファイルは {GRAPHS_DIR}" + (f" と {ICLOUD_GRAPHS_DIR}" if ICLOUD_GRAPHS_DIR else "") + " に保存しました。")
 
 
 def create_dashboard_html():
@@ -1870,10 +1905,11 @@ def create_dashboard_html():
     with open(dashboard_path, 'w', encoding='utf-8') as f:
         f.write(html_content)
     
-    # iCloudにもコピー
-    icloud_dashboard_path = ICLOUD_REPORT_DIR / "dashboard.html"
-    with open(icloud_dashboard_path, 'w', encoding='utf-8') as f:
-        f.write(html_content)
+    # iCloudにもコピー（有効な場合のみ）
+    if ICLOUD_REPORT_DIR is not None:
+        icloud_dashboard_path = ICLOUD_REPORT_DIR / "dashboard.html"
+        with open(icloud_dashboard_path, 'w', encoding='utf-8') as f:
+            f.write(html_content)
     
     print(f"ダッシュボードHTMLを生成しました: {dashboard_path}")
     return dashboard_path
